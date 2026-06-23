@@ -1,0 +1,89 @@
+# Root-level ignore for the u_r_m_s project
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+build/
+dist/
+pip-wheel-metadata/
+*.egg
+.python-version
+
+# Virtual environments
+venv/
+.envvenv/
+env/
+ENV/
+.venv/
+
+# Django and database
+*.sqlite3
+*.sqlite3-journal
+db.sqlite3
+db.sqlite3-journal
+local_settings.py
+media/
+staticfiles/
+
+# Backend env files
+/backend/.env
+/backend/.env.local
+*.env
+
+# Logs and reports
+logs/
+*.log
+*.log.*
+coverage.xml
+htmlcov/
+.tox/
+.pytest_cache/
+
+# Frontend / Node
+node_modules/
+/frontend/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Frontend build artifacts
+/frontend/build/
+/frontend/dist/
+/frontend/.next/
+/frontend/.turbo/
+/frontend/.vite/
+/frontend/.parcel-cache/
+/frontend/out/
+
+# Docker
+docker-compose.override.yml
+*.pid
+*.seed
+
+# IDEs and editors
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.swp
+*.swo
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Optional build artifacts
+*.class
+*.cache

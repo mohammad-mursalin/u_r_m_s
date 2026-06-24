@@ -4,6 +4,7 @@ Views for routine management API endpoints.
 
 from rest_framework import generics
 from rest_framework.permissions import AllowAny, IsAdminUser
+from django.http import JsonResponse
 from .models import Teacher, Course, Room, Batch, TimeSlot, Semester, RoutineSlot
 from .serializers import TeacherSerializer, CourseSerializer, RoomSerializer, BatchSerializer, TimeSlotSerializer, SemesterSerializer
 from .services.conflict_detector import detect_conflicts

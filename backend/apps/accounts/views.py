@@ -2,12 +2,28 @@
 Views for authentication endpoints.
 """
 
+import json
 from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods, require_safe
 from django.contrib.auth.decorators import login_required
+from django.middleware.csrf import get_token
+from django.views.decorators.csrf import csrf_exempt
 
 
+@require_safe
+def csrf_view(request):
+    """
+    Get CSRF token.
+    
+    Success 200: { "csrf_token": "..." }
+    """
+    return JsonResponse({
+        "csrf_token": get_token(request)
+    })
+
+
+@csrf_exempt
 @require_http_methods(["POST"])
 def login_view(request):
     """
@@ -18,8 +34,16 @@ def login_view(request):
     Success 200: { "user": { "id": 1, "username": "...", "is_staff": true } }
     Failure 401: { "error": true, "message": "Invalid credentials" }
     """
-    username = request.data.get('username')
-    password = request.data.get('password')
+    try:
+        data = json.loads(request.body) if request.body else {}
+    except json.JSONDecodeError:
+        return JsonResponse(
+            {"error": True, "message": "Invalid JSON body"},
+            status=400
+        )
+    
+    username = data.get('username')
+    password = data.get('password')
 
     if not username or not password:
         return JsonResponse(
@@ -48,8 +72,8 @@ def login_view(request):
     })
 
 
+@csrf_exempt
 @require_http_methods(["POST"])
-@login_required
 def logout_view(request):
     """
     Logout endpoint.
@@ -64,13 +88,19 @@ def logout_view(request):
 
 
 @require_safe
-@login_required
 def me_view(request):
     """
     Get current logged-in user info.
 
     Success 200: { "user": { "id": 1, "username": "...", "is_staff": true } }
+    Failure 401: { "error": true, "message": "Not authenticated" }
     """
+    if not request.user.is_authenticated:
+        return JsonResponse(
+            {"error": True, "message": "Not authenticated"},
+            status=401
+        )
+    
     return JsonResponse({
         "user": {
             "id": request.user.id,

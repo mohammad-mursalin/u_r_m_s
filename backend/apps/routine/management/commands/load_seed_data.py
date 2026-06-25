@@ -11,10 +11,32 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.load_teachers()
+        self.load_courses()
         self.load_rooms()
         self.load_time_slots()
         self.load_batches()
         self.stdout.write(self.style.SUCCESS('Seed data loaded successfully!'))
+
+    def load_courses(self):
+        """Load seed courses data."""
+        courses_data = [
+            ('ICE101', 'Introduction to Computer Science', 3.0, 'theory'),
+            ('ICE102', 'Programming Fundamentals', 3.0, 'lab'),
+            ('ICE201', 'Data Structures', 3.0, 'theory'),
+            ('ICE202', 'Database Systems', 3.0, 'theory'),
+            ('ICE301', 'Software Engineering', 3.0, 'theory'),
+        ]
+
+        for code, name, credit_hours, course_type in courses_data:
+            Course.objects.get_or_create(
+                code=code,
+                defaults={
+                    'name': name,
+                    'credit_hours': credit_hours,
+                    'course_type': course_type
+                }
+            )
+        self.stdout.write(self.style.SUCCESS('Courses loaded successfully!'))
 
     def load_teachers(self):
         """Load seed teachers data."""

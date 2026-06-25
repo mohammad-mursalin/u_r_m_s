@@ -2,7 +2,7 @@ from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
 from apps.exports.views import export_pdf
-from apps.accounts.views import login_view, logout_view, me_view
+from apps.accounts.views import login_view, logout_view, me_view, csrf_view
 from apps.routine.views.master_data import (
     TeacherViewSet, CourseViewSet, RoomViewSet, BatchViewSet, TimeSlotViewSet
 )
@@ -14,6 +14,7 @@ app_name = 'routine'
 
 urlpatterns = [
     # Authentication endpoints
+    path('auth/csrf/', csrf_view, name='csrf'),
     path('auth/login/', login_view, name='login'),
     path('auth/logout/', logout_view, name='logout'),
     path('auth/me/', me_view, name='me'),

@@ -9,8 +9,11 @@ from rest_framework.permissions import IsAdminUser, AllowAny
 from apps.routine.models import Semester, RoutineSlot, RoutineSlotTeacher
 from apps.routine.serializers import SemesterSerializer
 from django.db import transaction
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class SemesterViewSet(viewsets.ModelViewSet):
     queryset = Semester.objects.all()
     serializer_class = SemesterSerializer

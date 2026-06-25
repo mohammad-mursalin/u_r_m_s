@@ -147,7 +147,11 @@ export default function AddEditModal({ isOpen, onClose, onSave, title, fields, i
                       )}
 
                       <form onSubmit={handleSubmit} className="space-y-4">
-                        {fields.map(field => renderField(field))}
+                        {fields.map(field => (
+                          <div key={field.name}>
+                            {renderField(field)}
+                          </div>
+                        ))}
                         <div className="flex justify-end gap-3 pt-4">
                           <button
                             type="button"

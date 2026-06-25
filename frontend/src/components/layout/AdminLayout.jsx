@@ -18,13 +18,14 @@ export default function AdminLayout() {
     { name: 'Semesters', path: '/admin/semesters' },
   ]
 
-  if (!isLoggedIn) {
-    return <Navigate to="/login" replace />
-  }
-
   return (
     <div className="flex min-h-screen">
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-40 hidden md:block" onClick={() => setMobileMenuOpen(false)} />
+      {mobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" 
+          onClick={() => setMobileMenuOpen(false)} 
+        />
+      )}
 
       <aside className={`fixed md:static inset-y-0 left-0 z-50 w-64 bg-gray-800 text-white transform transition-transform duration-300 ease-in-out ${
         mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'

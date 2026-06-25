@@ -1,10 +1,10 @@
-import { create } from 'zustand';
-import { loginUser, getCurrentUser } from '../api/auth'
+import { create } from 'zustand'
+import { loginUser, logoutUser, getCurrentUser } from '../api/auth'
 
 const useAuthStore = create((set) => ({
   isLoggedIn: false,
   user: null,
-  isLoading: false,
+  isLoading: true,
   isLoggingIn: false,
 
   login: async (username, password) => {
@@ -19,24 +19,37 @@ const useAuthStore = create((set) => ({
       return { success: true }
     } catch (error) {
       set({ isLoggingIn: false })
-      console.error('Login failed:', error)
       return { success: false, error: error.response?.data?.message || 'Login failed' }
     }
   },
 
-  logout: () => set({ isLoggedIn: false, user: null }),
+  logout: async () => {
+    try {
+      await logoutUser()
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
+      set({ isLoggedIn: false, user: null })
+    }
+  },
 
   initAuth: async () => {
     set({ isLoading: true })
     try {
-      const user = await getCurrentUser()
-      if (user) {
-        set({ isLoggedIn: true, user, isLoading: false })
-      }
+      const data = await getCurrentUser()
+      set({
+        isLoggedIn: true,
+        user: data.user,
+        isLoading: false       
+      })
     } catch (error) {
-      set({ isLoading: false })
+      set({
+        isLoggedIn: false,
+        user: null,
+        isLoading: false       
+      })
     }
   }
-}));
+}))
 
-export { useAuthStore };
+export { useAuthStore }

@@ -1,0 +1,35 @@
+# src/
+src/
+├── api/
+│   ├── axiosInstance.js
+│   ├── auth.js
+│   ├── masterdata.js
+│   └── routine.js
+├── components/
+│   └── layout/
+│       ├── ProtectedRoute.jsx
+│       ├── Navbar.jsx
+│       ├── AdminLayout.jsx
+│       └── AdminSidebar.jsx
+├── pages/
+│   ├── PublicRoutinePage.jsx
+│   ├── BatchSchedulePage.jsx
+│   ├── TeacherSchedulePage.jsx
+│   ├── LoginPage.jsx
+│   └── admin/
+│       ├── DashboardPage.jsx
+│       ├── RoutineBuilderPage.jsx
+│       ├── TeachersPage.jsx
+│       ├── CoursesPage.jsx
+│       ├── RoomsPage.jsx
+│       ├── BatchesPage.jsx
+│       └── SemestersPage.jsx
+├── store/
+│   ├── authStore.js
+│   └── routineStore.js
+├── utils/
+│   ├── constants.js
+│   └── formatters.js
+├── App.jsx
+├── main.jsx
+└── index.css

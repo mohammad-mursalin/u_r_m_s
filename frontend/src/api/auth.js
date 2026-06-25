@@ -14,6 +14,13 @@ export const logoutUser = async () => {
 }
 
 export const getCurrentUser = async () => {
-  const response = await axiosInstance.get('/api/v1/auth/me/')
-  return response.data.user
+  try {
+    const response = await axiosInstance.get('/api/v1/auth/me/')
+    return response.data.user
+  } catch (error) {
+    if (error.response?.status === 401) {
+      return null
+    }
+    throw error
+  }
 }

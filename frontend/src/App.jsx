@@ -24,7 +24,7 @@ function App() {
 
   useEffect(() => {
     initAuth()
-  }, [initAuth])
+  }, [])
 
   const toasts = useToastStore(state => state.toasts)
   const removeToast = useToastStore(state => state.removeToast)
@@ -33,30 +33,30 @@ function App() {
     <Router>
       <Navbar />
       <Routes>
+        {/* Public routes */}
         <Route path="/" element={<PublicRoutinePage />} />
         <Route path="/schedule/batch/:batchName" element={<BatchSchedulePage />} />
         <Route path="/schedule/teacher/:code" element={<TeacherSchedulePage />} />
         <Route path="/login" element={<LoginPage />} />
 
+        {/* Admin routes — nested under AdminLayout via Outlet */}
         <Route
-          path="/admin/*"
           element={
             <ProtectedRoute>
-              <AdminLayout>
-                <Routes>
-                  <Route path="dashboard" element={<DashboardPage />} />
-                  <Route path="routine-builder" element={<RoutineBuilderPage />} />
-                  <Route path="teachers" element={<TeachersPage />} />
-                  <Route path="courses" element={<CoursesPage />} />
-                  <Route path="rooms" element={<RoomsPage />} />
-                  <Route path="batches" element={<BatchesPage />} />
-                  <Route path="semesters" element={<SemestersPage />} />
-                </Routes>
-              </AdminLayout>
+              <AdminLayout />
             </ProtectedRoute>
           }
-        />
+        >
+          <Route path="/admin/dashboard" element={<DashboardPage />} />
+          <Route path="/admin/routine-builder" element={<RoutineBuilderPage />} />
+          <Route path="/admin/teachers" element={<TeachersPage />} />
+          <Route path="/admin/courses" element={<CoursesPage />} />
+          <Route path="/admin/rooms" element={<RoomsPage />} />
+          <Route path="/admin/batches" element={<BatchesPage />} />
+          <Route path="/admin/semesters" element={<SemestersPage />} />
+        </Route>
 
+        {/* Catch-all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <div className="fixed top-4 right-4 z-50 flex flex-col gap-3">

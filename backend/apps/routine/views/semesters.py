@@ -5,16 +5,22 @@ Views for semester endpoints.
 from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser, AllowAny
 from apps.routine.models import Semester, RoutineSlot, RoutineSlotTeacher
 from apps.routine.serializers import SemesterSerializer
 from django.db import transaction
 
 
 class SemesterViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAdminUser]
     queryset = Semester.objects.all()
     serializer_class = SemesterSerializer
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy', 'activate', 'publish', 'unpublish', 'clone']:
+            permission_classes = [IsAdminUser]
+        else:
+            permission_classes = [AllowAny]
+        return [permission() for permission in permission_classes]
 
     @action(detail=True, methods=['post'])
     def activate(self, request, pk=None):

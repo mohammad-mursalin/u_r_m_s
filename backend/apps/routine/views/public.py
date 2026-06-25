@@ -69,7 +69,6 @@ def serialize_slot(slot):
     }
 
 
-@staticmethod
 def active_semester(request):
     """
     GET /api/v1/routine/active/
@@ -93,11 +92,11 @@ def active_semester(request):
 
     # Get query parameters
     filters = {}
-    if request.GET.get('batch'):
+    if 'batch' in request.GET and request.GET.get('batch'):
         filters['batch'] = request.GET.get('batch')
-    if request.GET.get('teacher'):
+    if 'teacher' in request.GET and request.GET.get('teacher'):
         filters['teacher'] = request.GET.get('teacher')
-    if request.GET.get('day'):
+    if 'day' in request.GET and request.GET.get('day'):
         filters['day'] = request.GET.get('day')
 
     # Get filtered slots
@@ -125,7 +124,6 @@ def active_semester(request):
     })
 
 
-@staticmethod
 def batch_schedule(request, batch_name):
     """
     GET /api/v1/routine/batch/<batch_name>/
@@ -142,7 +140,6 @@ def batch_schedule(request, batch_name):
     })
 
 
-@staticmethod
 def teacher_schedule(request, teacher_code):
     """
     GET /api/v1/routine/teacher/<short_code>/

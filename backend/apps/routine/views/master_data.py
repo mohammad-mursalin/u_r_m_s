@@ -16,17 +16,17 @@ from apps.routine.serializers import (
 
 
 class TeacherViewSet(viewsets.ModelViewSet):
-    permission_classes = [AllowAny]
     queryset = Teacher.objects.filter(is_active=True)
     serializer_class = TeacherSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['is_active']
 
-    @action(detail=False, methods=['get'])
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            permission_classes = [IsAdminUser]
+        else:
+            permission_classes = [AllowAny]
+        return [permission() for permission in permission_classes]
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -39,11 +39,17 @@ class TeacherViewSet(viewsets.ModelViewSet):
 
 
 class CourseViewSet(viewsets.ModelViewSet):
-    permission_classes = [AllowAny]
     queryset = Course.objects.filter(is_active=True)
     serializer_class = CourseSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['course_type', 'is_active']
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            permission_classes = [IsAdminUser]
+        else:
+            permission_classes = [AllowAny]
+        return [permission() for permission in permission_classes]
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -56,11 +62,17 @@ class CourseViewSet(viewsets.ModelViewSet):
 
 
 class RoomViewSet(viewsets.ModelViewSet):
-    permission_classes = [AllowAny]
     queryset = Room.objects.filter(is_active=True)
     serializer_class = RoomSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['room_type', 'is_active']
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            permission_classes = [IsAdminUser]
+        else:
+            permission_classes = [AllowAny]
+        return [permission() for permission in permission_classes]
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -73,11 +85,17 @@ class RoomViewSet(viewsets.ModelViewSet):
 
 
 class BatchViewSet(viewsets.ModelViewSet):
-    permission_classes = [AllowAny]
     queryset = Batch.objects.filter(is_active=True)
     serializer_class = BatchSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['program', 'is_active']
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            permission_classes = [IsAdminUser]
+        else:
+            permission_classes = [AllowAny]
+        return [permission() for permission in permission_classes]
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -90,15 +108,19 @@ class BatchViewSet(viewsets.ModelViewSet):
 
 
 class TimeSlotViewSet(viewsets.ModelViewSet):
-    permission_classes = [AllowAny]
     queryset = TimeSlot.objects.all().order_by('slot_number')
     serializer_class = TimeSlotSerializer
 
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            permission_classes = [IsAdminUser]
+        else:
+            permission_classes = [AllowAny]
+        return [permission() for permission in permission_classes]
+
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        instance.is_active = False
-        instance.save()
         return Response(
-            {"message": "Time slot deactivated successfully"},
-            status=status.HTTP_200_OK
+            {"message": "Time slot deletion not supported"},
+            status=status.HTTP_400_BAD_REQUEST
         )

@@ -1,6 +1,12 @@
 import axiosInstance from './axiosInstance'
 
+export const getCsrfToken = async () => {
+  const response = await axiosInstance.get('/api/v1/auth/csrf/')
+  return response.data.csrf_token
+}
+
 export const loginUser = async (username, password) => {
+  await getCsrfToken()
   const response = await axiosInstance.post('/api/v1/auth/login/', {
     username,
     password

@@ -19,16 +19,16 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    const email = e.target.email.value.trim()
+    const username = e.target.email.value.trim()
     const password = e.target.password.value.trim()
 
-    if (!email || !password) {
+    if (!username || !password) {
       alert('Email and password are required.')
       return
     }
 
     try {
-      const result = await login(email, password)
+      const result = await login(username, password)
       if (result.success) {
         navigate('/admin/dashboard')
       }
@@ -65,7 +65,7 @@ export default function LoginPage() {
               Email
             </label>
             <input
-              type="email"
+              type="text"
               id="email"
               name="email"
               required

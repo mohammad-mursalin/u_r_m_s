@@ -38,9 +38,11 @@ def detect_conflicts(
     query = Q(
         semester_id=semester_id,
         day_of_week=day_of_week,
-        week_type__in=['all', week_type] if week_type != 'all' else 'all',
         time_slot_id=time_slot_id
     )
+    
+    # Check against slots that have same week type or 'all' weeks
+    query = query & Q(week_type__in=['all', week_type])
     
     if exclude_slot_id:
         query = query & ~Q(id=exclude_slot_id)

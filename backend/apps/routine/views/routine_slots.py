@@ -98,6 +98,7 @@ class RoutineSlotViewSet(viewsets.ModelViewSet):
         })
 
     @action(detail=False, methods=['post'], url_path='check-conflicts')
+    @method_decorator(csrf_exempt)
     def check_conflicts(self, request, sem_id=None):
         """
         Check for conflicts without saving the slot.

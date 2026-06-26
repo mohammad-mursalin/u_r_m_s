@@ -112,7 +112,7 @@ class RoutineSlotCreateUpdateSerializer(serializers.ModelSerializer):
         instance.save()
 
         if teacher_ids is not None:
-            instance.teachers.clear()
+            RoutineSlotTeacher.objects.filter(routine_slot=instance).delete()
             for teacher_id in teacher_ids:
                 RoutineSlotTeacher.objects.get_or_create(
                     routine_slot=instance,

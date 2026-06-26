@@ -59,11 +59,11 @@ def serialize_slot(slot):
         },
         'teachers': [
             {
-                'id': teacher.id,
-                'short_code': teacher.short_code,
-                'full_name': teacher.full_name
+                'id': ts.teacher.id,
+                'short_code': ts.teacher.short_code,
+                'full_name': ts.teacher.full_name
             }
-            for teacher in slot.teachers.all()
+            for ts in slot.teachers.all()
         ],
         'slot_duration': slot.slot_duration
     }

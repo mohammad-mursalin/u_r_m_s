@@ -42,7 +42,7 @@ urlpatterns = [
     # Routine slot endpoints
     path('semesters/<int:sem_id>/slots/', RoutineSlotViewSet.as_view({'get': 'list', 'post': 'create'}), name='slot-list'),
     path('semesters/<int:sem_id>/slots/<int:pk>/', RoutineSlotViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'}), name='slot-detail'),
-    path('semesters/<int:sem_id>/slots/<int:pk>/check-conflicts/', RoutineSlotViewSet.as_view({'post': 'check_conflicts'}), name='slot-check-conflicts'),
+    path('semesters/<int:sem_id>/slots/check-conflicts/', RoutineSlotViewSet.as_view({'post': 'check_conflicts'}), name='slot-check-conflicts'),
 
     # Public routine endpoints
     path('routine/active/', active_semester, name='active-semester'),

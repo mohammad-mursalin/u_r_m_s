@@ -1,3 +1,5 @@
+import { BATCH_COLORS, DEFAULT_BATCH_COLOR } from './constants'
+
 export const formatDay = day => {
   const days = {
     saturday: 'Saturday',

@@ -59,7 +59,7 @@ class RoutineSlotSerializer(serializers.ModelSerializer):
     course = CourseSerializer()
     room = RoomSerializer()
     time_slot = TimeSlotSerializer()
-    teachers = TeacherSerializer(many=True)
+    teachers = serializers.SerializerMethodField()
 
     class Meta:
         model = RoutineSlot
@@ -68,6 +68,10 @@ class RoutineSlotSerializer(serializers.ModelSerializer):
             'day_of_week', 'week_type', 'slot_duration', 'notes',
             'teachers', 'created_at', 'updated_at'
         ]
+
+    def get_teachers(self, obj):
+        teachers = obj.teachers.all()
+        return TeacherSerializer([ts.teacher for ts in teachers], many=True).data
 
 
 class RoutineSlotCreateUpdateSerializer(serializers.ModelSerializer):

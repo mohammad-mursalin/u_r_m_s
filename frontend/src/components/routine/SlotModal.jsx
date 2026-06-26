@@ -1,167 +1,210 @@
 /**
  * Slot Modal for adding/editing routine slots
  */
-import { useState, useEffect } from 'react'
-import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react'
-import { X, Loader2, AlertTriangle, CheckCircle } from 'lucide-react'
-import { getActiveCourses, getRooms, getTeachers, checkConflicts, createSlot, updateSlot, deleteSlot } from '../../api/routine'
-import { formatDay, formatTime } from '../../utils/formatters'
-import { TIME_SLOTS } from '../../utils/constants'
-import useToastStore from '../../store/toastStore'
+import { Fragment, useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogPanel,
+  DialogTitle,
+  Transition,
+  TransitionChild,
+} from "@headlessui/react";
+import { X, Loader2, AlertTriangle, CheckCircle } from "lucide-react";
+import {
+  getActiveCourses,
+  getRooms,
+  getTeachers,
+  checkConflicts,
+  createSlot,
+  updateSlot,
+  deleteSlot,
+} from "../../api/routine";
+import { formatDay, formatTime } from "../../utils/formatters";
+import { TIME_SLOTS } from "../../utils/constants";
+import useToastStore from "../../store/toastStore";
 
-export default function SlotModal({ isOpen, onClose, day, timeSlot, batch, existingSlot, semesterId, onSaved, onDeleted }) {
-  const { showSuccess, showWarning, showError } = useToastStore()
-  const [loading, setLoading] = useState(false)
-  const [courses, setCourses] = useState([])
-  const [rooms, setRooms] = useState([])
-  const [teachers, setTeachers] = useState([])
+export default function SlotModal({
+  isOpen,
+  onClose,
+  day,
+  timeSlot,
+  batch,
+  existingSlot,
+  semesterId,
+  onSaved,
+  onDeleted,
+}) {
+  const { showSuccess, showWarning, showError } = useToastStore();
+  const [loading, setLoading] = useState(false);
+  const [courses, setCourses] = useState([]);
+  const [rooms, setRooms] = useState([]);
+  const [teachers, setTeachers] = useState([]);
   const [formData, setFormData] = useState({
-    course: '',
-    room: '',
+    course: "",
+    room: "",
     teacher_ids: [],
-    week_type: 'all',
-    duration: 1
-  })
-  const [errors, setErrors] = useState({})
-  const [conflicts, setConflicts] = useState([])
-  const [checkingConflicts, setCheckingConflicts] = useState(false)
+    week_type: "all",
+    duration: 1,
+  });
+  const [errors, setErrors] = useState({});
+  const [conflicts, setConflicts] = useState([]);
+  const [checkingConflicts, setCheckingConflicts] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      fetchOptions()
+      fetchOptions();
       if (existingSlot) {
         setFormData({
           course: existingSlot.course.id,
           room: existingSlot.room.id,
-          teacher_ids: existingSlot.teachers.map(t => t.id),
+          teacher_ids: existingSlot.teachers.map((t) => t.id),
           week_type: existingSlot.week_type,
-          duration: existingSlot.slot_duration
-        })
+          duration: existingSlot.slot_duration,
+        });
       } else {
         setFormData({
-          course: '',
-          room: '',
+          course: "",
+          room: "",
           teacher_ids: [],
-          week_type: 'all',
-          duration: 1
-        })
+          week_type: "all",
+          duration: 1,
+        });
       }
     }
-  }, [isOpen, existingSlot, day, timeSlot])
+  }, [isOpen, existingSlot, day, timeSlot]);
 
   const fetchOptions = async () => {
     try {
       const [coursesData, roomsData, teachersData] = await Promise.all([
         getActiveCourses(),
         getRooms(),
-        getTeachers()
-      ])
-      setCourses(coursesData)
-      setRooms(roomsData)
-      setTeachers(teachersData)
+        getTeachers(),
+      ]);
+      setCourses(coursesData);
+      setRooms(roomsData);
+      setTeachers(teachersData);
     } catch (err) {
-      console.error('Failed to fetch options:', err)
+      console.error("Failed to fetch options:", err);
     }
-  }
+  };
 
   const handleCheckConflicts = async () => {
-    if (!formData.course || !formData.room || formData.teacher_ids.length === 0) {
-      setConflicts([])
-      return
+    if (
+      !formData.course ||
+      !formData.room ||
+      formData.teacher_ids.length === 0
+    ) {
+      setConflicts([]);
+      return;
     }
 
-    setCheckingConflicts(true)
+    setCheckingConflicts(true);
     try {
       const result = await checkConflicts(semesterId, {
-        batch_id: batch.id,
+        batch: batch.id,
         teacher_ids: formData.teacher_ids,
-        room_id: parseInt(formData.room),
-        time_slot_id: timeSlot.id,
+        room: formData.room,
+        time_slot: timeSlot.id,
         day_of_week: day,
-        week_type: formData.week_type
-      })
-      setConflicts(result.conflicts || [])
+        week_type: formData.week_type,
+      });
+      setConflicts(result.conflicts || []);
     } catch (err) {
-      console.error('Failed to check conflicts:', err)
-      setConflicts([])
+      console.error("Failed to check conflicts:", err);
+      setConflicts([]);
     } finally {
-      setCheckingConflicts(false)
+      setCheckingConflicts(false);
     }
-  }
+  };
 
   useEffect(() => {
     if (formData.course && formData.room && formData.teacher_ids.length > 0) {
-      handleCheckConflicts()
+      handleCheckConflicts();
     } else {
-      setConflicts([])
+      setConflicts([]);
     }
-  }, [formData.course, formData.room, formData.teacher_ids, formData.week_type, semesterId])
+  }, [
+    formData.course,
+    formData.room,
+    formData.teacher_ids,
+    formData.week_type,
+    semesterId,
+  ]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setLoading(true)
-    setErrors({})
+const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setErrors({});
+
+    // Validate required fields
+    if (!formData.course || !formData.room || formData.teacher_ids.length === 0) {
+      setErrors({ general: 'Please select course, room, and at least one teacher.' });
+      setLoading(false);
+      return;
+    }
 
     try {
       const slotData = {
-        batch_id: batch.id,
-        course_id: parseInt(formData.course),
-        room_id: parseInt(formData.room),
-        time_slot_id: timeSlot.id,
+        batch: batch.id,
+        course: formData.course ? parseInt(formData.course) : null,
+        room: formData.room ? parseInt(formData.room) : null,
+        time_slot: timeSlot.id,
         day_of_week: day,
         week_type: formData.week_type,
-        slot_duration: parseInt(formData.duration),
+        slot_duration: formData.duration ? parseInt(formData.duration) : 1,
         teacher_ids: formData.teacher_ids
-      }
+      };
 
-      let successMessage = 'Slot saved successfully'
-      let conflictWarning = false
+      let successMessage = "Slot saved successfully";
+      let conflictWarning = false;
 
       if (existingSlot) {
-        await updateSlot(semesterId, existingSlot.id, slotData)
-        successMessage = 'Slot updated successfully'
+        await updateSlot(semesterId, existingSlot.id, slotData);
+        successMessage = "Slot updated successfully";
         if (conflicts.length > 0) {
-          conflictWarning = true
-          successMessage += ' — review highlighted cells for conflicts'
+          conflictWarning = true;
+          successMessage += " — review highlighted cells for conflicts";
         }
       } else {
-        await createSlot(semesterId, slotData)
-        successMessage = 'Slot added successfully'
+        await createSlot(semesterId, slotData);
+        successMessage = "Slot added successfully";
         if (conflicts.length > 0) {
-          conflictWarning = true
-          successMessage += ' — review highlighted cells for conflicts'
+          conflictWarning = true;
+          successMessage += " — review highlighted cells for conflicts";
         }
       }
 
-      showSuccess(successMessage)
-      onSaved()
-      onClose()
+      showSuccess(successMessage);
+      onSaved();
+      onClose();
     } catch (err) {
-      showError('Failed to save slot. Please try again.')
-      setErrors({ general: err.message || 'Failed to save. Please try again.' })
+      showError("Failed to save slot. Please try again.");
+      setErrors({
+        general: err.message || "Failed to save. Please try again.",
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete this slot?')) {
-      return
+    if (!window.confirm("Are you sure you want to delete this slot?")) {
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
     try {
-      await deleteSlot(semesterId, existingSlot.id)
-      showSuccess('Slot removed successfully')
-      onDeleted()
-      onClose()
+      await deleteSlot(semesterId, existingSlot.id);
+      showSuccess("Slot removed successfully");
+      onDeleted();
+      onClose();
     } catch (err) {
-      console.error('Failed to delete slot:', err)
-      showError('Failed to delete slot. Please try again.')
+      console.error("Failed to delete slot:", err);
+      showError("Failed to delete slot. Please try again.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -201,7 +244,10 @@ export default function SlotModal({ isOpen, onClose, day, timeSlot, batch, exist
 
                 <div className="sm:flex sm:items-start">
                   <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
-                    <DialogTitle as="h3" className="text-xl font-semibold leading-6 text-gray-900">
+                    <DialogTitle
+                      as="h3"
+                      className="text-xl font-semibold leading-6 text-gray-900"
+                    >
                       {existingSlot
                         ? `Edit Slot — ${formatDay(day).toUpperCase()} — ${timeSlot.label} — ${batch.name}`
                         : `Add Slot — ${formatDay(day).toUpperCase()} — ${timeSlot.label} — ${batch.name}`}
@@ -210,13 +256,17 @@ export default function SlotModal({ isOpen, onClose, day, timeSlot, batch, exist
                     <div className="mt-4 space-y-4">
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <p className="text-sm text-gray-600 mb-2">
-                          <span className="font-medium">Day:</span> {formatDay(day).toUpperCase()}
+                          <span className="font-medium">Day:</span>{" "}
+                          {formatDay(day).toUpperCase()}
                         </p>
                         <p className="text-sm text-gray-600">
-                          <span className="font-medium">Time:</span> {formatTime(timeSlot.start_time)} - {formatTime(timeSlot.end_time)}
+                          <span className="font-medium">Time:</span>{" "}
+                          {formatTime(timeSlot.start)} -{" "}
+                          {formatTime(timeSlot.end)}
                         </p>
                         <p className="text-sm text-gray-600">
-                          <span className="font-medium">Batch:</span> {batch.name}
+                          <span className="font-medium">Batch:</span>{" "}
+                          {batch.name}
                         </p>
                       </div>
 
@@ -227,11 +277,16 @@ export default function SlotModal({ isOpen, onClose, day, timeSlot, batch, exist
                           </label>
                           <select
                             value={formData.course}
-                            onChange={(e) => setFormData({ ...formData, course: e.target.value })}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                course: e.target.value,
+                              })
+                            }
                             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                           >
                             <option value="">Select Course</option>
-                            {courses.map(course => (
+                            {courses.map((course) => (
                               <option key={course.id} value={course.id}>
                                 {course.code} — {course.name}
                               </option>
@@ -245,11 +300,13 @@ export default function SlotModal({ isOpen, onClose, day, timeSlot, batch, exist
                           </label>
                           <select
                             value={formData.room}
-                            onChange={(e) => setFormData({ ...formData, room: e.target.value })}
+                            onChange={(e) =>
+                              setFormData({ ...formData, room: e.target.value })
+                            }
                             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                           >
                             <option value="">Select Room</option>
-                            {rooms.map(room => (
+                            {rooms.map((room) => (
                               <option key={room.id} value={room.id}>
                                 Room {room.room_number} ({room.room_type})
                               </option>
@@ -262,21 +319,40 @@ export default function SlotModal({ isOpen, onClose, day, timeSlot, batch, exist
                             Teachers * (required, at least one)
                           </label>
                           <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-md">
-                            {teachers.map(teacher => (
-                              <label key={teacher.id} className="flex items-center px-4 py-2 hover:bg-gray-50 cursor-pointer">
+                            {teachers.map((teacher) => (
+                              <label
+                                key={teacher.id}
+                                className="flex items-center px-4 py-2 hover:bg-gray-50 cursor-pointer"
+                              >
                                 <input
                                   type="checkbox"
-                                  checked={formData.teacher_ids.includes(teacher.id)}
+                                  checked={formData.teacher_ids.includes(
+                                    teacher.id,
+                                  )}
                                   onChange={(e) => {
                                     if (e.target.checked) {
-                                      setFormData({ ...formData, teacher_ids: [...formData.teacher_ids, teacher.id] })
+                                      setFormData({
+                                        ...formData,
+                                        teacher_ids: [
+                                          ...formData.teacher_ids,
+                                          teacher.id,
+                                        ],
+                                      });
                                     } else {
-                                      setFormData({ ...formData, teacher_ids: formData.teacher_ids.filter(id => id !== teacher.id) })
+                                      setFormData({
+                                        ...formData,
+                                        teacher_ids:
+                                          formData.teacher_ids.filter(
+                                            (id) => id !== teacher.id,
+                                          ),
+                                      });
                                     }
                                   }}
                                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                 />
-                                <span className="ml-2 text-sm text-gray-700">{teacher.short_code} — {teacher.full_name}</span>
+                                <span className="ml-2 text-sm text-gray-700">
+                                  {teacher.short_code} — {teacher.full_name}
+                                </span>
                               </label>
                             ))}
                           </div>
@@ -287,18 +363,25 @@ export default function SlotModal({ isOpen, onClose, day, timeSlot, batch, exist
                             Week Type * (required)
                           </label>
                           <div className="flex gap-4">
-                            {['all', 'odd', 'even'].map((type) => (
+                            {["all", "odd", "even"].map((type) => (
                               <label key={type} className="flex items-center">
                                 <input
                                   type="radio"
                                   name="week_type"
                                   value={type}
                                   checked={formData.week_type === type}
-                                  onChange={(e) => setFormData({ ...formData, week_type: e.target.value })}
+                                  onChange={(e) =>
+                                    setFormData({
+                                      ...formData,
+                                      week_type: e.target.value,
+                                    })
+                                  }
                                   className="text-blue-600 focus:ring-blue-500"
                                 />
                                 <span className="ml-2 text-sm text-gray-700 capitalize">
-                                  {type === 'all' ? 'All Weeks' : type + ' Weeks Only'}
+                                  {type === "all"
+                                    ? "All Weeks"
+                                    : type + " Weeks Only"}
                                 </span>
                               </label>
                             ))}
@@ -311,7 +394,12 @@ export default function SlotModal({ isOpen, onClose, day, timeSlot, batch, exist
                           </label>
                           <select
                             value={formData.duration}
-                            onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                duration: e.target.value,
+                              })
+                            }
                             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                           >
                             <option value="1">1 slot (theory)</option>
@@ -327,21 +415,32 @@ export default function SlotModal({ isOpen, onClose, day, timeSlot, batch, exist
                         )}
 
                         <div className="border-t pt-4">
-                          <p className="text-sm font-medium text-gray-700 mb-2">Conflict Preview:</p>
+                          <p className="text-sm font-medium text-gray-700 mb-2">
+                            Conflict Preview:
+                          </p>
                           {checkingConflicts ? (
                             <div className="flex items-center gap-2 text-blue-600">
                               <Loader2 size={16} className="animate-spin" />
-                              <span className="text-sm">Checking conflicts...</span>
+                              <span className="text-sm">
+                                Checking conflicts...
+                              </span>
                             </div>
                           ) : conflicts.length > 0 ? (
                             <div className="bg-red-50 border border-red-200 rounded p-3">
-                              <AlertTriangle size={16} className="text-red-600 inline mr-2" />
+                              <AlertTriangle
+                                size={16}
+                                className="text-red-600 inline mr-2"
+                              />
                               <span className="text-sm text-red-700">
-                                {conflicts.length} conflict{conflicts.length > 1 ? 's' : ''} detected
+                                {conflicts.length} conflict
+                                {conflicts.length > 1 ? "s" : ""} detected
                               </span>
                               <div className="mt-2 space-y-1">
                                 {conflicts.map((conflict, index) => (
-                                  <p key={index} className="text-xs text-red-600">
+                                  <p
+                                    key={index}
+                                    className="text-xs text-red-600"
+                                  >
                                     {conflict.message}
                                   </p>
                                 ))}
@@ -349,19 +448,24 @@ export default function SlotModal({ isOpen, onClose, day, timeSlot, batch, exist
                             </div>
                           ) : (
                             <div className="bg-green-50 border border-green-200 rounded p-3">
-                              <CheckCircle size={16} className="text-green-600 inline mr-2" />
-                              <span className="text-sm text-green-700">✓ No conflicts detected</span>
+                              <CheckCircle
+                                size={16}
+                                className="text-green-600 inline mr-2"
+                              />
+                              <span className="text-sm text-green-700">
+                                ✓ No conflicts detected
+                              </span>
                             </div>
                           )}
                         </div>
 
-                        <div className="flex justify-end gap-3 pt-4">
+<div className="flex justify-end gap-3 pt-4">
                           {existingSlot && (
                             <button
                               type="button"
                               onClick={handleDelete}
-                              className="rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
                               disabled={loading}
+                              className="rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
                             >
                               Delete Slot
                             </button>
@@ -369,8 +473,8 @@ export default function SlotModal({ isOpen, onClose, day, timeSlot, batch, exist
                           <button
                             type="button"
                             onClick={onClose}
-                            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                             disabled={loading}
+                            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                           >
                             Cancel
                           </button>
@@ -393,7 +497,5 @@ export default function SlotModal({ isOpen, onClose, day, timeSlot, batch, exist
         </div>
       </Dialog>
     </Transition>
-  )
+  );
 }
-
-import { Fragment } from 'react'

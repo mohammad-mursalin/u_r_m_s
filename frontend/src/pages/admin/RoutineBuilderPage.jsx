@@ -230,7 +230,10 @@ export default function RoutineBuilderPage() {
           <EmptyState
             message="No slots yet. Click any cell to add a class."
             actionLabel="Add First Slot"
-            onAction={() => setModalData({ day: 'monday', timeSlot: TIME_SLOTS[0], batch: { name: '15B' }, slot: null })}
+            onAction={() => {
+              setModalData({ day: 'monday', timeSlot: TIME_SLOTS[0], batch: { id: 3, name: '15B' }, slot: null })
+              setModalOpen(true)
+            }}
           />
         ) : (
           <RoutineGrid

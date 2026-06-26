@@ -1,3 +1,4 @@
+# routine_slots.py
 """
 Views for routine slot endpoints.
 """
@@ -43,23 +44,23 @@ class RoutineSlotViewSet(viewsets.ModelViewSet):
         Create a new routine slot with conflict detection.
         """
         semester_id = kwargs.get('sem_id')
-        validated_data = request.data
+        data = request.data
 
         # Run conflict detection
         conflicts = detect_conflicts(
             semester_id=semester_id,
-            batch_id=validated_data.get('batch_id'),
-            teacher_ids=validated_data.get('teacher_ids'),
-            room_id=validated_data.get('room_id'),
-            time_slot_id=validated_data.get('time_slot_id'),
-            day_of_week=validated_data.get('day_of_week'),
-            week_type=validated_data.get('week_type')
+            batch_id=data.get('batch'),
+            teacher_ids=data.get('teacher_ids', []),
+            room_id=data.get('room'),
+            time_slot_id=data.get('time_slot'),
+            day_of_week=data.get('day_of_week'),
+            week_type=data.get('week_type', 'all')
         )
 
         # Create the slot regardless of conflicts
-        serializer = self.get_serializer(data=validated_data)
+        serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
-        routine_slot = serializer.save()
+        routine_slot = serializer.save(semester_id=semester_id)
 
         return Response({
             'id': routine_slot.id,
@@ -72,22 +73,22 @@ class RoutineSlotViewSet(viewsets.ModelViewSet):
         """
         semester_id = kwargs.get('sem_id')
         instance = self.get_object()
-        validated_data = request.data
+        data = request.data
 
         # Run conflict detection (exclude current slot)
         conflicts = detect_conflicts(
             semester_id=semester_id,
-            batch_id=validated_data.get('batch_id', instance.batch_id),
-            teacher_ids=validated_data.get('teacher_ids'),
-            room_id=validated_data.get('room_id', instance.room_id),
-            time_slot_id=validated_data.get('time_slot_id', instance.time_slot_id),
-            day_of_week=validated_data.get('day_of_week', instance.day_of_week),
-            week_type=validated_data.get('week_type', instance.week_type),
+            batch_id=data.get('batch', instance.batch_id),
+            teacher_ids=data.get('teacher_ids'),
+            room_id=data.get('room', instance.room_id),
+            time_slot_id=data.get('time_slot', instance.time_slot_id),
+            day_of_week=data.get('day_of_week', instance.day_of_week),
+            week_type=data.get('week_type', instance.week_type),
             exclude_slot_id=instance.id
         )
 
         # Update the slot regardless of conflicts
-        serializer = self.get_serializer(instance, data=validated_data, partial=True)
+        serializer = self.get_serializer(instance, data=data, partial=True)
         serializer.is_valid(raise_exception=True)
         routine_slot = serializer.save()
 
@@ -96,21 +97,21 @@ class RoutineSlotViewSet(viewsets.ModelViewSet):
             'conflicts': conflicts
         })
 
-    @action(detail=True, methods=['post'], url_path='check-conflicts')
-    def check_conflicts(self, request, sem_id=None, pk=None):
+    @action(detail=False, methods=['post'], url_path='check-conflicts')
+    def check_conflicts(self, request, sem_id=None):
         """
         Check for conflicts without saving the slot.
         """
-        validated_data = request.data
+        data = request.data
 
         conflicts = detect_conflicts(
             semester_id=sem_id,
-            batch_id=validated_data.get('batch_id'),
-            teacher_ids=validated_data.get('teacher_ids'),
-            room_id=validated_data.get('room_id'),
-            time_slot_id=validated_data.get('time_slot_id'),
-            day_of_week=validated_data.get('day_of_week'),
-            week_type=validated_data.get('week_type')
+            batch_id=data.get('batch'),
+            teacher_ids=data.get('teacher_ids'),
+            room_id=data.get('room'),
+            time_slot_id=data.get('time_slot'),
+            day_of_week=data.get('day_of_week'),
+            week_type=data.get('week_type')
         )
 
         return Response({'conflicts': conflicts})

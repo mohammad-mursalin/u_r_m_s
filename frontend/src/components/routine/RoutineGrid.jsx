@@ -2,7 +2,7 @@
  * The main timetable grid component
  * Props: slots (array), isEditable (bool), onCellClick (func), conflicts (object keyed by slot id)
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Fragment } from 'react'
 import { DAYS_OF_WEEK, TIME_SLOTS, BATCH_COLORS } from '../../utils/constants'
 import { formatDay } from '../../utils/formatters'
 import { getTeacherCodes } from '../../utils/formatters'
@@ -39,7 +39,7 @@ export default function RoutineGrid({ slots, isEditable = false, onCellClick, co
         <tbody>
           {DAYS_OF_WEEK.map((day, dayIndex) => {
             return (
-              <React.Fragment key={day}>
+              <Fragment key={day}>
                 <tr>
                   <td
                     colSpan={TIME_SLOTS.length}
@@ -53,7 +53,7 @@ export default function RoutineGrid({ slots, isEditable = false, onCellClick, co
                 {batches.map(batchName => {
                   const breakCell = TIME_SLOTS.find(ts => ts.isBreak)
                   return (
-                    <React.Fragment key={batchName}>
+                    <Fragment key={batchName}>
                       <tr>
                         <td className="bg-gray-100 p-2 text-sm font-semibold text-gray-700 border-r-2 border-gray-300">
                           {batchName}
@@ -103,10 +103,10 @@ export default function RoutineGrid({ slots, isEditable = false, onCellClick, co
                           )
                         })}
                       </tr>
-                    </React.Fragment>
+                    </Fragment>
                   )
                 })}
-              </React.Fragment>
+              </Fragment>
             )
           })}
         </tbody>

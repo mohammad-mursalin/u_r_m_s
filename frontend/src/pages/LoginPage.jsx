@@ -19,11 +19,11 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    const username = e.target.email.value.trim()
+    const username = e.target.username.value.trim()
     const password = e.target.password.value.trim()
 
     if (!username || !password) {
-      alert('Email and password are required.')
+      alert('Username and password are required.')
       return
     }
 
@@ -61,16 +61,16 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-              Email
+            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+              Username
             </label>
             <input
               type="text"
-              id="email"
-              name="email"
+              id="username"
+              name="username"
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
-              placeholder="admin@pust.ac.bd"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600 text-base"
+              placeholder="admin"
             />
           </div>
 

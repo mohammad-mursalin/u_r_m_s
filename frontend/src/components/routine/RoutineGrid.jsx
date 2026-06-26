@@ -2,17 +2,15 @@
  * The main timetable grid component
  * Props: slots (array), isEditable (bool), onCellClick (func), conflicts (object keyed by slot id)
  */
-import { useEffect, useState, Fragment } from 'react'
+import { useState, Fragment } from 'react'
 import { DAYS_OF_WEEK, TIME_SLOTS, BATCH_COLORS } from '../../utils/constants'
 import { formatDay } from '../../utils/formatters'
 import { getTeacherCodes } from '../../utils/formatters'
 import RoutineCell from './RoutineCell'
 import ConflictBadge from './ConflictBadge'
 
-export default function RoutineGrid({ slots, isEditable = false, onCellClick, conflicts = {} }) {
-  const [batches, setBatches] = useState([
-    'MSc', '13B', '14B', '15B', '16B', '17B'
-  ])
+export default function RoutineGrid({ slots, isEditable = false, onCellClick, conflicts = {}, batches = [] }) {
+  const batchList = batches.length > 0 ? batches : ['MSc', '13B', '14B', '15B', '16B', '17B']
 
   const filteredSlots = slots || []
 
@@ -50,8 +48,10 @@ export default function RoutineGrid({ slots, isEditable = false, onCellClick, co
                     {formatDay(day).toUpperCase()}
                   </td>
                 </tr>
-                {batches.map(batchName => {
+                {batchList.map(batch => {
                   const breakCell = TIME_SLOTS.find(ts => ts.isBreak)
+                  const batchName = typeof batch === 'string' ? batch : batch.name
+                  const batchId = typeof batch === 'object' ? batch.id : null
                   return (
                     <Fragment key={batchName}>
                       <tr>
@@ -63,7 +63,7 @@ export default function RoutineGrid({ slots, isEditable = false, onCellClick, co
                             return (
                               <td
                                 key={tsIndex}
-                                colSpan={batches.length}
+                                colSpan={batchList.length}
                                 className="bg-gray-200 text-gray-600 text-sm p-2 text-center italic border-b-2 border-gray-300"
                               >
                                 Prayer & Lunch Break
@@ -72,7 +72,7 @@ export default function RoutineGrid({ slots, isEditable = false, onCellClick, co
                           }
 
                           const matchedSlot = filteredSlots.find(slot =>
-                            slot.day === day &&
+                            slot.day_of_week === day &&
                             slot.time_slot.id === ts.id &&
                             slot.batch.name === batchName
                           )
@@ -88,14 +88,14 @@ export default function RoutineGrid({ slots, isEditable = false, onCellClick, co
                                 <RoutineCell
                                   slot={matchedSlot}
                                   isEditable={isEditable}
-                                  onClick={() => onCellClick(day, ts, batchName, matchedSlot)}
+                                  onClick={() => onCellClick(day, ts, { id: batchId, name: batchName }, matchedSlot)}
                                   hasConflict={conflicts[slotId]?.length > 0}
                                 />
                               ) : (
                                 <RoutineCell
                                   slot={null}
                                   isEditable={isEditable}
-                                  onClick={() => onCellClick(day, ts, batchName, null)}
+                                  onClick={() => onCellClick(day, ts, { id: batchId, name: batchName }, null)}
                                   hasConflict={false}
                                 />
                               )}

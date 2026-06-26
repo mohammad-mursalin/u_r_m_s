@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { CheckCircle, RefreshCw, ExternalLink, Search, AlertCircle } from 'lucide-react'
-import { getSemesters, getSemesterSlots, publishSemester, unpublishSemester, cloneSemester } from '../../api/routine'
+import { getSemesters, getSemesterSlots, publishSemester, unpublishSemester, cloneSemester, getBatches, checkConflicts as checkConflictsApi } from '../../api/routine'
 import RoutineGrid from '../../components/routine/RoutineGrid'
 import SlotModal from '../../components/routine/SlotModal'
 import { DAYS_OF_WEEK, TIME_SLOTS, BATCH_COLORS } from '../../utils/constants'
@@ -20,6 +20,7 @@ export default function RoutineBuilderPage() {
   const [semesters, setSemesters] = useState([])
   const [selectedSemester, setSelectedSemester] = useState(null)
   const [slots, setSlots] = useState([])
+  const [batches, setBatches] = useState([])
   const [loading, setLoading] = useState(true)
   const [checkingAllConflicts, setCheckingAllConflicts] = useState(false)
   const [conflicts, setConflicts] = useState({})
@@ -29,6 +30,7 @@ export default function RoutineBuilderPage() {
 
   useEffect(() => {
     fetchSemesters()
+    fetchBatches()
   }, [])
 
   useEffect(() => {
@@ -37,28 +39,37 @@ export default function RoutineBuilderPage() {
     }
   }, [selectedSemester])
 
-  const fetchSemesters = async () => {
-    try {
-      const data = await getSemesters()
-      setSemesters(data)
+const fetchSemesters = async () => {
+     try {
+       const data = await getSemesters()
+       setSemesters(data)
 
-      const semesterId = searchParams.get('semester')
-      if (semesterId) {
-        const found = data.find(s => s.id === parseInt(semesterId))
-        if (found) {
-          setSelectedSemester(found)
-        }
-      } else {
-        const active = data.find(s => s.is_active)
-        if (active) {
-          setSelectedSemester(active)
-        }
-      }
-    } catch (err) {
-      console.error('Failed to fetch semesters:', err)
-      showError('Failed to load semesters. Please refresh the page.')
-    }
-  }
+       const semesterId = searchParams.get('semester')
+       if (semesterId) {
+         const found = data.find(s => s.id === parseInt(semesterId))
+         if (found) {
+           setSelectedSemester(found)
+         }
+       } else {
+         const active = data.find(s => s.is_active)
+         if (active) {
+           setSelectedSemester(active)
+         }
+       }
+     } catch (err) {
+       console.error('Failed to fetch semesters:', err)
+       showError('Failed to load semesters. Please refresh the page.')
+     }
+   }
+
+   const fetchBatches = async () => {
+     try {
+       const data = await getBatches()
+       setBatches(data)
+     } catch (err) {
+       console.error('Failed to fetch batches:', err)
+     }
+   }
 
   const fetchSlots = async () => {
     try {
@@ -101,7 +112,7 @@ export default function RoutineBuilderPage() {
     }
   }
 
-  const handleCheckAllConflicts = async () => {
+const handleCheckAllConflicts = async () => {
     if (!selectedSemester) return
 
     setCheckingAllConflicts(true)
@@ -109,12 +120,13 @@ export default function RoutineBuilderPage() {
 
     for (const slot of slots) {
       try {
-        const result = await checkConflicts(selectedSemester.id, {
-          batch_id: slot.batch.id,
-          room_id: slot.room.id,
-          time_slot_id: slot.time_slot.id,
+        const result = await checkConflictsApi(selectedSemester.id, {
+          batch: slot.batch.id,
+          room: slot.room.id,
+          time_slot: slot.time_slot.id,
           day_of_week: slot.day,
-          week_type: slot.week_type
+          week_type: slot.week_type,
+          teacher_ids: slot.teachers.map(t => t.id)
         })
 
         if (result.conflicts && result.conflicts.length > 0) {
@@ -129,14 +141,9 @@ export default function RoutineBuilderPage() {
     setCheckingAllConflicts(false)
   }
 
-  const handleCellClick = (day, timeSlot, batch, slot) => {
-    if (!slot) {
-      setModalData({ day, timeSlot, batch, slot: null })
-      setModalOpen(true)
-    } else {
-      setModalData({ day, timeSlot, batch, slot })
-      setModalOpen(true)
-    }
+const handleCellClick = (day, timeSlot, batch, slot) => {
+    setModalData({ day, timeSlot, batch, slot })
+    setModalOpen(true)
   }
 
   const handleSlotSaved = () => {
@@ -148,15 +155,6 @@ export default function RoutineBuilderPage() {
   }
 
   const totalConflicts = Object.values(conflicts).flat().length
-
-  const checkConflicts = async (semesterId, slotData) => {
-    const result = await fetch(`/api/v1/semesters/${semesterId}/slots/check-conflicts/`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(slotData)
-    })
-    return result.json()
-  }
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -241,6 +239,7 @@ export default function RoutineBuilderPage() {
             isEditable={true}
             onCellClick={handleCellClick}
             conflicts={conflicts}
+            batches={batches}
           />
         )}
 

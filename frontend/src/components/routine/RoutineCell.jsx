@@ -8,7 +8,7 @@ import { getBatchColor, getTeacherCodes } from '../../utils/formatters'
 export default function RoutineCell({ slot, isEditable, onClick, hasConflict }) {
   if (!slot) {
     return (
-      <div className="h-full w-full bg-gray-100 border border-gray-200 rounded flex items-center justify-center hover:bg-gray-200 transition cursor-pointer">
+      <div onClick={onClick} className="h-full w-full bg-gray-100 border border-gray-200 rounded flex items-center justify-center hover:bg-gray-200 transition cursor-pointer">
         <span className="text-gray-400 text-xs">+</span>
       </div>
     )

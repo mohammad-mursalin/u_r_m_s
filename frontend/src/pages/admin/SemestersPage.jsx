@@ -3,7 +3,7 @@
  */
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Edit, ExternalLink, CheckCircle, AlertCircle, Trash2, Clock } from 'lucide-react'
+import { Edit, ExternalLink, CheckCircle, AlertCircle, Trash2, Clock, Plus } from 'lucide-react'
 import AddEditModal from '../../components/ui/AddEditModal'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import EmptyState from '../../components/ui/EmptyState'
@@ -60,6 +60,11 @@ export default function SemestersPage() {
         s.name?.toLowerCase().includes(term)
       ))
     }
+  }
+
+  const handleAdd = () => {
+    setEditingSemester(null)
+    setModalOpen(true)
   }
 
   const handleEdit = (semester) => {
@@ -175,6 +180,13 @@ export default function SemestersPage() {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold text-gray-800">Semesters</h1>
+          <button
+            onClick={handleAdd}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+          >
+            <Plus size={16} />
+            Add Semester
+          </button>
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-4 mb-6">

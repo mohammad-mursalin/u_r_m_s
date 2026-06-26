@@ -73,7 +73,7 @@ export default function RoutineFilterPanel({ batches, teachers, onFilterChange, 
           >
             <option value="All">All Teachers</option>
             {teachers.filter(t => t !== 'All').map(teacher => (
-              <option key={teacher.short_code} value={teacher.short_code}>{teacher.full_name}</option>
+              <option key={teacher} value={teacher}>{teacher}</option>
             ))}
           </select>
         </div>

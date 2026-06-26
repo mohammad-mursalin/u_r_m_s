@@ -108,7 +108,18 @@ export default function SlotModal({
         day_of_week: day,
         week_type: formData.week_type,
       });
-      setConflicts(result.conflicts || []);
+      // Transform conflict object into flat array of conflict messages
+      const conflictList = [];
+      if (result.conflicts?.teachers?.length) {
+        result.conflicts.teachers.forEach(c => conflictList.push(c.message));
+      }
+      if (result.conflicts?.rooms?.length) {
+        result.conflicts.rooms.forEach(c => conflictList.push(c.message));
+      }
+      if (result.conflicts?.batches?.length) {
+        result.conflicts.batches.forEach(c => conflictList.push(c.message));
+      }
+      setConflicts(conflictList);
     } catch (err) {
       console.error("Failed to check conflicts:", err);
       setConflicts([]);
@@ -441,7 +452,7 @@ const handleSubmit = async (e) => {
                                     key={index}
                                     className="text-xs text-red-600"
                                   >
-                                    {conflict.message}
+                                    {typeof conflict === 'string' ? conflict : conflict.message}
                                   </p>
                                 ))}
                               </div>

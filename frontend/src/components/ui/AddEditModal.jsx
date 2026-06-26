@@ -2,7 +2,7 @@
  * Shared Add/Edit Modal component using Headless UI Dialog
  */
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react'
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { X, Loader2 } from 'lucide-react'
 
 export default function AddEditModal({ isOpen, onClose, onSave, title, fields, initialData = null }) {
@@ -182,5 +182,3 @@ export default function AddEditModal({ isOpen, onClose, onSave, title, fields, i
     </Transition>
   )
 }
-
-import { Fragment } from 'react'

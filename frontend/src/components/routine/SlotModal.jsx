@@ -22,7 +22,6 @@ import {
 import { formatDay, formatTime } from "../../utils/formatters";
 import { TIME_SLOTS } from "../../utils/constants";
 import useToastStore from "../../store/toastStore";
-
 export default function SlotModal({
   isOpen,
   onClose,
@@ -49,7 +48,6 @@ export default function SlotModal({
   const [errors, setErrors] = useState({});
   const [conflicts, setConflicts] = useState([]);
   const [checkingConflicts, setCheckingConflicts] = useState(false);
-
   useEffect(() => {
     if (isOpen) {
       fetchOptions();
@@ -72,7 +70,6 @@ export default function SlotModal({
       }
     }
   }, [isOpen, existingSlot, day, timeSlot]);
-
   const fetchOptions = async () => {
     try {
       const [coursesData, roomsData, teachersData] = await Promise.all([
@@ -87,7 +84,6 @@ export default function SlotModal({
       console.error("Failed to fetch options:", err);
     }
   };
-
   const handleCheckConflicts = async () => {
     if (
       !formData.course ||
@@ -97,27 +93,46 @@ export default function SlotModal({
       setConflicts([]);
       return;
     }
-
     setCheckingConflicts(true);
+    const payload = {
+      batch: batch.id,
+      teacher_ids: formData.teacher_ids,
+      room: parseInt(formData.room),
+      time_slot: timeSlot.id,
+      day_of_week: day,
+      week_type: formData.week_type,
+    };
+    if (existingSlot) {
+      payload.exclude_slot_id = existingSlot.id;
+    }
+    console.log("Conflict check payload:", {
+      batch_id: batch.id,
+      batch_id_type: typeof batch.id,
+      teacher_ids: formData.teacher_ids,
+      teacher_ids_types: formData.teacher_ids.map((id) => typeof id),
+      room: payload.room,
+      room_type: typeof payload.room,
+      time_slot: timeSlot.id,
+      time_slot_type: typeof timeSlot.id,
+      day_of_week: day,
+      week_type: formData.week_type,
+      semesterId: semesterId,
+      semesterId_type: typeof semesterId,
+      exclude_slot_id: existingSlot ? existingSlot.id : "none",
+    });
     try {
-      const result = await checkConflicts(semesterId, {
-        batch: batch.id,
-        teacher_ids: formData.teacher_ids,
-        room: formData.room,
-        time_slot: timeSlot.id,
-        day_of_week: day,
-        week_type: formData.week_type,
-      });
+      const result = await checkConflicts(semesterId, payload);
+      console.log("Conflict check response:", result);
       // Transform conflict object into flat array of conflict messages
       const conflictList = [];
       if (result.conflicts?.teachers?.length) {
-        result.conflicts.teachers.forEach(c => conflictList.push(c.message));
+        result.conflicts.teachers.forEach((c) => conflictList.push(c.message));
       }
       if (result.conflicts?.rooms?.length) {
-        result.conflicts.rooms.forEach(c => conflictList.push(c.message));
+        result.conflicts.rooms.forEach((c) => conflictList.push(c.message));
       }
       if (result.conflicts?.batches?.length) {
-        result.conflicts.batches.forEach(c => conflictList.push(c.message));
+        result.conflicts.batches.forEach((c) => conflictList.push(c.message));
       }
       setConflicts(conflictList);
     } catch (err) {
@@ -127,7 +142,6 @@ export default function SlotModal({
       setCheckingConflicts(false);
     }
   };
-
   useEffect(() => {
     if (formData.course && formData.room && formData.teacher_ids.length > 0) {
       handleCheckConflicts();
@@ -141,19 +155,31 @@ export default function SlotModal({
     formData.week_type,
     semesterId,
   ]);
-
-const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setErrors({});
-
-    // Validate required fields
-    if (!formData.course || !formData.room || formData.teacher_ids.length === 0) {
-      setErrors({ general: 'Please select course, room, and at least one teacher.' });
+    // Check for conflicts before saving
+    if (conflicts.length > 0) {
+      setErrors({
+        general:
+          "Cannot save — resolve conflicts first. Check the conflict preview below.",
+      });
       setLoading(false);
       return;
     }
-
+    // Validate required fields
+    if (
+      !formData.course ||
+      !formData.room ||
+      formData.teacher_ids.length === 0
+    ) {
+      setErrors({
+        general: "Please select course, room, and at least one teacher.",
+      });
+      setLoading(false);
+      return;
+    }
     try {
       const slotData = {
         batch: batch.id,
@@ -163,29 +189,15 @@ const handleSubmit = async (e) => {
         day_of_week: day,
         week_type: formData.week_type,
         slot_duration: formData.duration ? parseInt(formData.duration) : 1,
-        teacher_ids: formData.teacher_ids
+        teacher_ids: formData.teacher_ids,
       };
-
-      let successMessage = "Slot saved successfully";
-      let conflictWarning = false;
-
       if (existingSlot) {
         await updateSlot(semesterId, existingSlot.id, slotData);
-        successMessage = "Slot updated successfully";
-        if (conflicts.length > 0) {
-          conflictWarning = true;
-          successMessage += " — review highlighted cells for conflicts";
-        }
+        showSuccess("Slot updated successfully");
       } else {
         await createSlot(semesterId, slotData);
-        successMessage = "Slot added successfully";
-        if (conflicts.length > 0) {
-          conflictWarning = true;
-          successMessage += " — review highlighted cells for conflicts";
-        }
+        showSuccess("Slot added successfully");
       }
-
-      showSuccess(successMessage);
       onSaved();
       onClose();
     } catch (err) {
@@ -197,12 +209,10 @@ const handleSubmit = async (e) => {
       setLoading(false);
     }
   };
-
   const handleDelete = async () => {
     if (!window.confirm("Are you sure you want to delete this slot?")) {
       return;
     }
-
     setLoading(true);
     try {
       await deleteSlot(semesterId, existingSlot.id);
@@ -216,7 +226,6 @@ const handleSubmit = async (e) => {
       setLoading(false);
     }
   };
-
   return (
     <Transition appear show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-50" onClose={onClose}>
@@ -231,7 +240,6 @@ const handleSubmit = async (e) => {
         >
           <div className="fixed inset-0 bg-black bg-opacity-50" />
         </TransitionChild>
-
         <div className="fixed inset-0 z-10 overflow-y-auto">
           <div className="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
             <TransitionChild
@@ -252,7 +260,6 @@ const handleSubmit = async (e) => {
                     <X size={20} />
                   </button>
                 </div>
-
                 <div className="sm:flex sm:items-start">
                   <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
                     <DialogTitle
@@ -263,7 +270,6 @@ const handleSubmit = async (e) => {
                         ? `Edit Slot — ${formatDay(day).toUpperCase()} — ${timeSlot.label} — ${batch.name}`
                         : `Add Slot — ${formatDay(day).toUpperCase()} — ${timeSlot.label} — ${batch.name}`}
                     </DialogTitle>
-
                     <div className="mt-4 space-y-4">
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <p className="text-sm text-gray-600 mb-2">
@@ -280,7 +286,6 @@ const handleSubmit = async (e) => {
                           {batch.name}
                         </p>
                       </div>
-
                       <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -304,7 +309,6 @@ const handleSubmit = async (e) => {
                             ))}
                           </select>
                         </div>
-
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             Room * (required)
@@ -324,7 +328,6 @@ const handleSubmit = async (e) => {
                             ))}
                           </select>
                         </div>
-
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             Teachers * (required, at least one)
@@ -368,7 +371,6 @@ const handleSubmit = async (e) => {
                             ))}
                           </div>
                         </div>
-
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             Week Type * (required)
@@ -398,7 +400,6 @@ const handleSubmit = async (e) => {
                             ))}
                           </div>
                         </div>
-
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             Duration * (required)
@@ -418,13 +419,11 @@ const handleSubmit = async (e) => {
                             <option value="3">3 slots (lab)</option>
                           </select>
                         </div>
-
                         {errors.general && (
                           <div className="bg-red-50 border border-red-500 text-red-700 px-4 py-2 rounded">
                             {errors.general}
                           </div>
                         )}
-
                         <div className="border-t pt-4">
                           <p className="text-sm font-medium text-gray-700 mb-2">
                             Conflict Preview:
@@ -437,14 +436,15 @@ const handleSubmit = async (e) => {
                               </span>
                             </div>
                           ) : conflicts.length > 0 ? (
-                            <div className="bg-red-50 border border-red-200 rounded p-3">
+                            <div className="bg-red-50 border border-red-300 rounded p-3">
                               <AlertTriangle
                                 size={16}
                                 className="text-red-600 inline mr-2"
                               />
-                              <span className="text-sm text-red-700">
+                              <span className="text-sm font-medium text-red-700">
                                 {conflicts.length} conflict
-                                {conflicts.length > 1 ? "s" : ""} detected
+                                {conflicts.length > 1 ? "s" : ""} — fix before
+                                saving
                               </span>
                               <div className="mt-2 space-y-1">
                                 {conflicts.map((conflict, index) => (
@@ -452,7 +452,10 @@ const handleSubmit = async (e) => {
                                     key={index}
                                     className="text-xs text-red-600"
                                   >
-                                    {typeof conflict === 'string' ? conflict : conflict.message}
+                                    •{" "}
+                                    {typeof conflict === "string"
+                                      ? conflict
+                                      : conflict.message}
                                   </p>
                                 ))}
                               </div>
@@ -469,8 +472,7 @@ const handleSubmit = async (e) => {
                             </div>
                           )}
                         </div>
-
-<div className="flex justify-end gap-3 pt-4">
+                        <div className="flex justify-end gap-3 pt-4">
                           {existingSlot && (
                             <button
                               type="button"
@@ -491,11 +493,23 @@ const handleSubmit = async (e) => {
                           </button>
                           <button
                             type="submit"
-                            disabled={loading}
-                            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                            disabled={loading || conflicts.length > 0}
+                            className={`rounded-md px-4 py-2 text-sm font-medium text-white
+                              flex items-center gap-2 disabled:opacity-50
+                              ${
+                                conflicts.length > 0
+                                  ? "bg-gray-400 cursor-not-allowed"
+                                  : "bg-blue-600 hover:bg-blue-700"
+                              }`}
                           >
-                            {loading && <Loader2 size={16} className="animate-spin" />}
-                            {loading ? 'Saving...' : 'Save Slot'}
+                            {loading && (
+                              <Loader2 size={16} className="animate-spin" />
+                            )}
+                            {loading
+                              ? "Saving..."
+                              : conflicts.length > 0
+                                ? "Resolve Conflicts First"
+                                : "Save Slot"}
                           </button>
                         </div>
                       </form>

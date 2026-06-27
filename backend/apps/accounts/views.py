@@ -8,7 +8,6 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods, require_safe
 from django.contrib.auth.decorators import login_required
 from django.middleware.csrf import get_token
-from django.views.decorators.csrf import csrf_exempt
 
 
 @require_safe
@@ -16,14 +15,14 @@ def csrf_view(request):
     """
     Get CSRF token.
     
-    Success 200: { "csrf_token": "..." }
+    Success 200: { "csrfToken": "..." }
     """
+    token = get_token(request)
     return JsonResponse({
-        "csrf_token": get_token(request)
+        "csrfToken": token
     })
 
 
-@csrf_exempt
 @require_http_methods(["POST"])
 def login_view(request):
     """
@@ -72,7 +71,6 @@ def login_view(request):
     })
 
 
-@csrf_exempt
 @require_http_methods(["POST"])
 def logout_view(request):
     """

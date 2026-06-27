@@ -1,4 +1,3 @@
-# routine_slots.py
 """
 Views for routine slot endpoints.
 """
@@ -12,11 +11,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from apps.routine.models import Semester, RoutineSlot
 from apps.routine.serializers import RoutineSlotCreateUpdateSerializer
 from apps.routine.services.conflict_detector import detect_conflicts
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
 
 
-@method_decorator(csrf_exempt, name='dispatch')
 class RoutineSlotViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminUser]
     serializer_class = RoutineSlotCreateUpdateSerializer
@@ -98,7 +94,6 @@ class RoutineSlotViewSet(viewsets.ModelViewSet):
         })
 
     @action(detail=False, methods=['post'], url_path='check-conflicts')
-    @method_decorator(csrf_exempt)
     def check_conflicts(self, request, sem_id=None):
         """
         Check for conflicts without saving the slot.

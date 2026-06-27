@@ -7,8 +7,6 @@ from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
 
 from apps.routine.models import Teacher, Course, Room, Batch, TimeSlot
 from apps.routine.serializers import (
@@ -17,7 +15,6 @@ from apps.routine.serializers import (
 )
 
 
-@method_decorator(csrf_exempt, name='dispatch')
 class TeacherViewSet(viewsets.ModelViewSet):
     queryset = Teacher.objects.filter(is_active=True)
     serializer_class = TeacherSerializer
@@ -41,7 +38,6 @@ class TeacherViewSet(viewsets.ModelViewSet):
         )
 
 
-@method_decorator(csrf_exempt, name='dispatch')
 class CourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.filter(is_active=True)
     serializer_class = CourseSerializer
@@ -65,7 +61,6 @@ class CourseViewSet(viewsets.ModelViewSet):
         )
 
 
-@method_decorator(csrf_exempt, name='dispatch')
 class RoomViewSet(viewsets.ModelViewSet):
     queryset = Room.objects.filter(is_active=True)
     serializer_class = RoomSerializer
@@ -89,7 +84,6 @@ class RoomViewSet(viewsets.ModelViewSet):
         )
 
 
-@method_decorator(csrf_exempt, name='dispatch')
 class BatchViewSet(viewsets.ModelViewSet):
     queryset = Batch.objects.filter(is_active=True)
     serializer_class = BatchSerializer
@@ -113,7 +107,6 @@ class BatchViewSet(viewsets.ModelViewSet):
         )
 
 
-@method_decorator(csrf_exempt, name='dispatch')
 class TimeSlotViewSet(viewsets.ModelViewSet):
     queryset = TimeSlot.objects.all().order_by('slot_number')
     serializer_class = TimeSlotSerializer

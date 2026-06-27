@@ -10,12 +10,33 @@ class Command(BaseCommand):
     help = 'Load seed data for the routine management system'
 
     def handle(self, *args, **options):
+        self.load_semesters()
         self.load_teachers()
         self.load_courses()
         self.load_rooms()
         self.load_time_slots()
         self.load_batches()
         self.stdout.write(self.style.SUCCESS('Seed data loaded successfully!'))
+
+    def load_semesters(self):
+        """Load seed semester data."""
+        import datetime
+        semesters_data = [
+            ('Fall 2026', '2026-09-01', '2026-12-31', True),
+            ('Spring 2026', '2026-01-01', '2026-05-31', False),
+        ]
+
+        for name, start_date, end_date, is_active in semesters_data:
+            Semester.objects.get_or_create(
+                name=name,
+                defaults={
+                    'start_date': datetime.date.fromisoformat(start_date),
+                    'end_date': datetime.date.fromisoformat(end_date),
+                    'is_active': is_active,
+                    'is_published': False
+                }
+            )
+        self.stdout.write(self.style.SUCCESS('Semesters loaded successfully!'))
 
     def load_courses(self):
         """Load seed courses data."""

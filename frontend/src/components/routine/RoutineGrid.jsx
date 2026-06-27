@@ -17,6 +17,17 @@ export default function RoutineGrid({ slots, isEditable = false, onCellClick, co
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full">
+        <colgroup>
+          <col style={{ width: '120px' }} />
+          <col style={{ width: '100px' }} />
+          <col style={{ width: '100px' }} />
+          <col style={{ width: '100px' }} />
+          <col style={{ width: '100px' }} />
+          <col style={{ width: '100px' }} />
+          <col style={{ width: '100px' }} />
+          <col style={{ width: '100px' }} />
+          <col style={{ width: '100px' }} />
+        </colgroup>
         <thead>
           <tr>
             <th className="bg-gray-200 p-2 text-xs font-semibold text-gray-700 min-w-[80px]">
@@ -40,7 +51,7 @@ export default function RoutineGrid({ slots, isEditable = false, onCellClick, co
               <Fragment key={day}>
                 <tr>
                   <td
-                    colSpan={TIME_SLOTS.length}
+                    colSpan={TIME_SLOTS.length + 1}
                     className={`bg-gray-700 text-white p-2 text-sm font-bold ${
                       dayIndex === 0 ? 'border-b-4 border-gray-900' : ''
                     }`}
@@ -48,8 +59,7 @@ export default function RoutineGrid({ slots, isEditable = false, onCellClick, co
                     {formatDay(day).toUpperCase()}
                   </td>
                 </tr>
-                {batchList.map(batch => {
-                  const breakCell = TIME_SLOTS.find(ts => ts.isBreak)
+                {batchList.map((batch, batchIndex) => {
                   const batchName = typeof batch === 'string' ? batch : batch.name
                   const batchId = typeof batch === 'object' ? batch.id : null
                   return (
@@ -60,22 +70,25 @@ export default function RoutineGrid({ slots, isEditable = false, onCellClick, co
                         </td>
                         {TIME_SLOTS.map((ts, tsIndex) => {
                           if (ts.isBreak) {
-                            return (
-                              <td
-                                key={tsIndex}
-                                colSpan={batchList.length}
-                                className="bg-gray-200 text-gray-600 text-sm p-2 text-center italic border-b-2 border-gray-300"
-                              >
-                                Prayer & Lunch Break
-                              </td>
-                            )
+                            if (batchIndex === 0) {
+                              return (
+                                <td
+                                  key={tsIndex}
+                                  rowSpan={batchList.length}
+                                  className="bg-gray-200 text-gray-600 text-sm p-2 text-center italic border-b-2 border-gray-300"
+                                >
+                                  Prayer & Lunch Break
+                                </td>
+                              )
+                            }
+                            return null
                           }
 
-const matchedSlot = filteredSlots.find(slot =>
-                             slot.day === day &&
-                             slot.time_slot.id === ts.id &&
-                             slot.batch.name === batchName
-                           )
+                          const matchedSlot = filteredSlots.find(slot =>
+                            slot.day === day &&
+                            slot.time_slot.id === ts.id &&
+                            slot.batch.name === batchName
+                          )
 
                           const slotId = matchedSlot?.id
 

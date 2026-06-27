@@ -60,12 +60,13 @@ class RoutineSlotSerializer(serializers.ModelSerializer):
     room = RoomSerializer()
     time_slot = TimeSlotSerializer()
     teachers = serializers.SerializerMethodField()
+    day = serializers.CharField(source='day_of_week')
 
     class Meta:
         model = RoutineSlot
         fields = [
             'id', 'semester', 'batch', 'course', 'room', 'time_slot',
-            'day_of_week', 'week_type', 'slot_duration', 'notes',
+            'day', 'week_type', 'slot_duration', 'notes',
             'teachers', 'created_at', 'updated_at'
         ]
 

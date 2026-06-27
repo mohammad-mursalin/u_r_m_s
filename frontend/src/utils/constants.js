@@ -5,10 +5,10 @@ export const TIME_SLOTS = [
   { id: 2, label: '10:00–11:00', start: '10:00', end: '11:00', isBreak: false },
   { id: 3, label: '11:00–12:00', start: '11:00', end: '12:00', isBreak: false },
   { id: 4, label: '12:00–1:00', start: '12:00', end: '13:00', isBreak: false },
-  { id: null, label: 'Prayer & Lunch Break', isBreak: true },
-  { id: 5, label: '2:00–3:00', start: '14:00', end: '15:00', isBreak: false },
-  { id: 6, label: '3:00–4:00', start: '15:00', end: '16:00', isBreak: false },
-  { id: 7, label: '4:00–5:00', start: '16:00', end: '17:00', isBreak: false },
+  { id: 5, label: 'Prayer & Lunch Break', isBreak: true },
+  { id: 6, label: '2:00–3:00', start: '14:00', end: '15:00', isBreak: false },
+  { id: 7, label: '3:00–4:00', start: '15:00', end: '16:00', isBreak: false },
+  { id: 8, label: '4:00–5:00', start: '16:00', end: '17:00', isBreak: false },
 ]
 
 export const WEEK_TYPES = ['all', 'odd', 'even']

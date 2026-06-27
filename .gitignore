@@ -87,3 +87,5 @@ desktop.ini
 # Optional build artifacts
 *.class
 *.cache
+
+.playwright-mcp/

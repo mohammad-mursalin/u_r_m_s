@@ -20,8 +20,9 @@ export default function SemestersPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingSemester, setEditingSemester] = useState(null)
   const [modalLoading, setModalLoading] = useState(false)
-  const [cloneSemesterId, setCloneSemesterId] = useState(null)
   const [showCloning, setShowCloning] = useState(false)
+  const [cloneName, setCloneName] = useState('')
+  const [cloningId, setCloningId] = useState(null)
   const { showSuccess, showError } = useToastStore()
 
   const fields = [
@@ -110,15 +111,21 @@ export default function SemestersPage() {
   }
 
   const handleClone = (semester) => {
-    setCloneSemesterId(semester.id)
+    setCloningId(semester.id)
+    setCloneName('')
     setShowCloning(true)
   }
 
-  const handleCloneConfirm = async (newName) => {
+  const handleCloneConfirm = async (id, newName) => {
+    if (newName.trim() === '') {
+      showError('Please enter a name for the new semester')
+      return
+    }
     try {
-      await cloneSemester(cloneSemesterId, newName)
+      await cloneSemester(id, newName)
       setShowCloning(false)
-      setCloneSemesterId(null)
+      setCloningId(null)
+      setCloneName('')
       fetchSemesters()
       showSuccess(`Semester cloned successfully as ${newName}`)
     } catch (err) {
@@ -299,9 +306,13 @@ export default function SemestersPage() {
               <input
                 type="text"
                 placeholder="New semester name..."
+                value={cloneName}
+                onChange={(e) => setCloneName(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md mb-4"
-                onChange={(e) => handleCloneConfirm(e.target.value)}
               />
+              {cloneName.trim() === '' && (
+                <p className="text-red-500 text-sm mb-4">Please enter a name for the new semester</p>
+              )}
               <div className="flex justify-end gap-3">
                 <button
                   onClick={() => setShowCloning(false)}
@@ -310,8 +321,9 @@ export default function SemestersPage() {
                   Cancel
                 </button>
                 <button
-                  onClick={() => handleCloneConfirm('New Semester')}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  onClick={() => handleCloneConfirm(cloningId, cloneName)}
+                  disabled={cloneName.trim() === ''}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Clone
                 </button>

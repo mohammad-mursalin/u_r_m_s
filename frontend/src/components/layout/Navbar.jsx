@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
-import { LogOut, Menu } from 'lucide-react'
+import { Menu } from 'lucide-react'
 
 export default function Navbar() {
-  const { user, logout } = useAuthStore()
+  const { isLoggedIn, user, logout } = useAuthStore()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const closeMobileMenu = () => setMobileMenuOpen(false)
@@ -24,25 +24,20 @@ export default function Navbar() {
         </Link>
       </div>
 
-      {user ? (
+      {isLoggedIn ? (
         <div className="flex items-center gap-4">
-          <span className="text-gray-600">
-            {user.username}
+          <span className="text-sm text-gray-600">
+            {user?.username || 'Admin'}
           </span>
           <button
             onClick={logout}
-            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition"
+            className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200"
           >
-            <LogOut size={16} />
             Logout
           </button>
         </div>
       ) : (
-        <Link
-          to="/login"
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-          onClick={closeMobileMenu}
-        >
+        <Link to="/login" className="text-sm text-blue-600 hover:text-blue-800">
           Admin Login
         </Link>
       )}
@@ -57,7 +52,7 @@ export default function Navbar() {
             >
               Home
             </Link>
-            {user && (
+            {isLoggedIn && (
               <>
                 <Link
                   to="/admin/dashboard"

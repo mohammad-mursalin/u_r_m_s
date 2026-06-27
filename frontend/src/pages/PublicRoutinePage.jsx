@@ -23,28 +23,28 @@ export default function PublicRoutinePage() {
     fetchRoutine()
   }, [])
 
-  const fetchRoutine = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const data = await getActiveRoutine()
+const fetchRoutine = async () => {
+     try {
+       setLoading(true)
+       setError(null)
+       const data = await getActiveRoutine()
 
-      if (data.semester) {
-        setSemesterInfo(data.semester)
-      }
+       if (data.semester) {
+         setSemesterInfo(data.semester)
+       }
 
 if (data.slots && data.slots.length > 0) {
-         setSlots(data.slots)
-         setBatches([...new Set(data.slots.map(s => s.batch.name))])
-         setTeachers([...new Set(data.slots.flatMap(s => s.teachers.map(t => ({ short_code: t.short_code, full_name: t.full_name }))))])
-       }
-    } catch (err) {
-      setError('Could not load routine. Please try again.')
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
+          setSlots(data.slots)
+          setBatches([...new Set(data.slots.map(s => s.batch.name))])
+          setTeachers([...new Map(data.slots.flatMap(s => s.teachers).map(t => [t.short_code, t])).values()])
+        }
+     } catch (err) {
+       setError('Could not load routine. Please try again.')
+       console.error(err)
+     } finally {
+       setLoading(false)
+     }
+   }
 
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters)

@@ -59,8 +59,8 @@ export default function RoutineFilterPanel({ batches, teachers, onFilterChange, 
             className="border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="All">All Batches</option>
-            {batches.filter(b => b !== 'All').map(batch => (
-              <option key={batch} value={batch}>{batch}</option>
+            {batches.filter(b => b && b !== 'All').map(batch => (
+              <option key={`batch-${batch}`} value={batch}>{batch}</option>
             ))}
           </select>
         </div>
@@ -72,8 +72,8 @@ export default function RoutineFilterPanel({ batches, teachers, onFilterChange, 
             className="border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="All">All Teachers</option>
-            {teachers.filter(t => t !== 'All').map(teacher => (
-              <option key={teacher} value={teacher}>{teacher}</option>
+            {teachers.filter(t => t && t.short_code && t.short_code !== 'All').map(teacher => (
+              <option key={teacher.short_code} value={teacher.short_code}>{teacher.full_name}</option>
             ))}
           </select>
         </div>

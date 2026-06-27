@@ -247,7 +247,7 @@ const handleCellClick = (day, timeSlot, batch, slot) => {
           <SlotModal
             isOpen={modalOpen}
             onClose={() => setModalOpen(false)}
-            onSave={handleSlotSaved}
+            onSaved={handleSlotSaved}
             onDeleted={handleSlotDeleted}
             day={modalData.day}
             timeSlot={modalData.timeSlot}

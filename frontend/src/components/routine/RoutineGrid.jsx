@@ -71,11 +71,11 @@ export default function RoutineGrid({ slots, isEditable = false, onCellClick, co
                             )
                           }
 
-                          const matchedSlot = filteredSlots.find(slot =>
-                            slot.day_of_week === day &&
-                            slot.time_slot.id === ts.id &&
-                            slot.batch.name === batchName
-                          )
+const matchedSlot = filteredSlots.find(slot =>
+                             slot.day === day &&
+                             slot.time_slot.id === ts.id &&
+                             slot.batch.name === batchName
+                           )
 
                           const slotId = matchedSlot?.id
 

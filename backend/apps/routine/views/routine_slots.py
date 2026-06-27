@@ -99,15 +99,19 @@ class RoutineSlotViewSet(viewsets.ModelViewSet):
         Check for conflicts without saving the slot.
         """
         data = request.data
+        print(f"DEBUG check-conflicts request: {data}")
+        print(f"DEBUG sem_id: {sem_id}, week_type: {data.get('week_type')}")
 
         conflicts = detect_conflicts(
             semester_id=sem_id,
             batch_id=data.get('batch'),
-            teacher_ids=data.get('teacher_ids'),
+            teacher_ids=data.get('teacher_ids', []),
             room_id=data.get('room'),
             time_slot_id=data.get('time_slot'),
             day_of_week=data.get('day_of_week'),
-            week_type=data.get('week_type')
+            week_type=data.get('week_type') or 'all',
+            exclude_slot_id=data.get('exclude_slot_id')
         )
+        print(f"DEBUG conflicts result: {conflicts}")
 
         return Response({'conflicts': conflicts})

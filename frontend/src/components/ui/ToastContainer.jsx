@@ -1,22 +1,8 @@
-import { useEffect } from 'react';
-import { X } from 'lucide-react';
 import useToastStore from '../../store/toastStore';
 import Toast from './Toast';
 
 function ToastContainer() {
   const { toasts, removeToast } = useToastStore();
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      toasts.forEach(toast => {
-        if (toast.timer) {
-          clearTimeout(toast.timer);
-        }
-      });
-    }, 5000);
-
-    return () => clearTimeout(timer);
-  }, [toasts]);
 
   const handleClose = (id) => {
     removeToast(id);
@@ -30,6 +16,7 @@ function ToastContainer() {
           id={toast.id}
           message={toast.message}
           type={toast.type}
+          duration={toast.duration}
           onClose={() => handleClose(toast.id)}
         />
       ))}

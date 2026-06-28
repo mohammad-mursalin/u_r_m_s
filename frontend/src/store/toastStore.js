@@ -5,65 +5,43 @@ import { create } from 'zustand';
  * Uses Zustand for lightweight state management
  */
 
-const useToastStore = create((set) => ({
+const useToastStore = create((set, get) => ({
   toasts: [],
 
-  addToast: (message, type = 'info') =>
+  addToast: (message, type = 'info', duration = 3000) => {
+    const id = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     set((state) => ({
       toasts: [
         ...state.toasts,
         {
-          id: `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          id,
           message,
           type,
+          duration,
           timestamp: Date.now()
         }
       ]
-    })),
+    }));
+    // Auto-remove after duration (except for error toasts which stay until dismissed)
+    if (duration > 0) {
+      setTimeout(() => {
+        get().removeToast(id);
+      }, duration);
+    }
+  },
 
   removeToast: (id) =>
     set((state) => ({
       toasts: state.toasts.filter((toast) => toast.id !== id)
     })),
 
-  showSuccess: (message) =>
-    set((state) => ({
-      toasts: [
-        ...state.toasts,
-        {
-          id: `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          message,
-          type: 'success',
-          timestamp: Date.now()
-        }
-      ]
-    })),
+  showSuccess: (message) => get().addToast(message, 'success', 3000),
 
-  showError: (message) =>
-    set((state) => ({
-      toasts: [
-        ...state.toasts,
-        {
-          id: `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          message,
-          type: 'error',
-          timestamp: Date.now()
-        }
-      ]
-    })),
+  showError: (message) => get().addToast(message, 'error', 0),
 
-  showWarning: (message) =>
-    set((state) => ({
-      toasts: [
-        ...state.toasts,
-        {
-          id: `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          message,
-          type: 'warning',
-          timestamp: Date.now()
-        }
-      ]
-    }))
+  showWarning: (message) => get().addToast(message, 'warning', 5000),
+
+  showInfo: (message) => get().addToast(message, 'info', 3000)
 }));
 
 export default useToastStore;

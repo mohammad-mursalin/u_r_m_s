@@ -47,8 +47,8 @@ def export_pdf(request):
 
     slots = slots.distinct().prefetch_related('teachers__teacher')
 
-    # Get all time slots ordered
-    time_slots = TimeSlot.objects.all().order_by('slot_number')
+    # Get all time slots in correct order (matching frontend)
+    time_slots = TimeSlot.objects.order_by('slot_number')
     batches = sorted(set(slots.values_list('batch__name', flat=True)))
     
     # Get unique teachers from slots
@@ -138,11 +138,17 @@ def export_pdf(request):
                     <th style="width: 100px;">Day | Batch</th>
         '''
         
-        for ts in time_slots:
-            if ts.is_break:
-                html += f'<th style="width: 100px;">{ts.label or "Break"}</th>'
-            else:
-                html += f'<th style="width: 100px;">{ts.label or f"{ts.start_time}–{ts.end_time}"}</th>'
+        # Header columns in correct order: morning (1-4), break (0), afternoon (5-7)
+        morning_slots = [ts for ts in time_slots if ts.slot_number in [1, 2, 3, 4]]
+        break_slot = [ts for ts in time_slots if ts.slot_number == 0]
+        afternoon_slots = [ts for ts in time_slots if ts.slot_number in [5, 6, 7]]
+        
+        for ts in morning_slots:
+            html += f'<th style="width: 100px;">{ts.label or f"{ts.start_time}–{ts.end_time}"}</th>'
+        for ts in break_slot:
+            html += '<th style="width: 100px;">Prayer &amp; Lunch Break</th>'
+        for ts in afternoon_slots:
+            html += f'<th style="width: 100px;">{ts.label or f"{ts.start_time}–{ts.end_time}"}</th>'
         
         html += '''
                 </tr>
@@ -161,11 +167,35 @@ def export_pdf(request):
                         batch_color = BATCH_COLORS.get(batch_name, '#ffffff')
                         html += f'<tr><td class="batch-label" style="background:{batch_color}">{batch_name}</td>'
                         
-                        for ts in time_slots:
+                        # Columns in correct order: 1,2,3,4 (morning), 0 (break), 5,6,7 (afternoon)
+                        # slot_number 0 = break, 1-4 = morning, 5-7 = afternoon
+                        morning_slots = [ts for ts in time_slots if ts.slot_number in [1, 2, 3, 4]]
+                        break_slot = [ts for ts in time_slots if ts.slot_number == 0]
+                        afternoon_slots = [ts for ts in time_slots if ts.slot_number in [5, 6, 7]]
+                        
+                        # Morning slots
+                        for ts in morning_slots:
                             slot = next((s for s in batch_slots if s.time_slot.id == ts.id), None)
-                            if ts.is_break:
-                                html += f'<td class="break-cell">{ts.label or "Prayer &amp; Lunch Break"}</td>'
-                            elif slot:
+                            if slot:
+                                teacher_codes = ', '.join([t.teacher.short_code for t in slot.teachers.all()])
+                                week_badge = ''
+                                if slot.week_type == 'odd':
+                                    week_badge = '<span class="week-badge odd-badge">[ODD]</span>'
+                                elif slot.week_type == 'even':
+                                    week_badge = '<span class="week-badge even-badge">[EVEN]</span>'
+                                html += f'<td>{slot.course.code}<br/><span style="font-size: 9px;">{teacher_codes}</span>{week_badge}<br/><span style="font-size: 9px; color: #6b7280;">R{slot.room.room_number}</span></td>'
+                            else:
+                                html += '<td></td>'
+                        
+                        # Break slot
+                        if break_slot:
+                            ts = break_slot[0]
+                            html += '<td class="break-cell">Prayer &amp; Lunch Break</td>'
+                        
+                        # Afternoon slots
+                        for ts in afternoon_slots:
+                            slot = next((s for s in batch_slots if s.time_slot.id == ts.id), None)
+                            if slot:
                                 teacher_codes = ', '.join([t.teacher.short_code for t in slot.teachers.all()])
                                 week_badge = ''
                                 if slot.week_type == 'odd':

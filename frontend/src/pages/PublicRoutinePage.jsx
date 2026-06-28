@@ -116,18 +116,37 @@ if (data.slots && data.slots.length > 0) {
           currentFilters={filters}
         />
 
-        <div className="bg-white rounded-lg shadow-md p-6 mt-6">
-          {slots.length > 0 ? (
-            <RoutineGrid
-              slots={slots}
-              isEditable={false}
-              onCellClick={handleCellClick}
-            />
-          ) : (
-            <p className="text-center text-gray-500">No slots found for selected filters.</p>
-          )}
-        </div>
-      </div>
+<div className="bg-white rounded-lg shadow-md p-6 mt-6">
+           {slots.length > 0 ? (
+             <RoutineGrid
+               slots={slots}
+               isEditable={false}
+               onCellClick={handleCellClick}
+             />
+           ) : (
+             <p className="text-center text-gray-500">No slots found for selected filters.</p>
+           )}
+         </div>
+
+         {teachers.length > 0 && (
+           <div className="mt-6 bg-white rounded-lg shadow p-4">
+             <h3 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wider">
+               Teacher Legend
+             </h3>
+             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+               {teachers.map(teacher => (
+                 <div key={teacher.id} className="flex items-center gap-2 text-sm">
+                   <span className="font-bold text-gray-800 min-w-[40px]">
+                     {teacher.short_code}
+                   </span>
+                   <span className="text-gray-500">—</span>
+                   <span className="text-gray-600">{teacher.full_name}</span>
+                 </div>
+               ))}
+             </div>
+           </div>
+         )}
+       </div>
     </div>
   )
 }

@@ -10,6 +10,7 @@ import useToastStore from '../../store/toastStore'
 export default function ViewRoutinePage() {
   const navigate = useNavigate()
   const [slots, setSlots] = useState([])
+  const [originalSlots, setOriginalSlots] = useState([])
   const [loading, setLoading] = useState(true)
   const [semesterInfo, setSemesterInfo] = useState(null)
   const [batches, setBatches] = useState([])
@@ -32,6 +33,7 @@ export default function ViewRoutinePage() {
 
       if (data.slots && data.slots.length > 0) {
         setSlots(data.slots)
+        setOriginalSlots(data.slots)
         setBatches([...new Set(data.slots.map(s => s.batch.name))])
         setTeachers([...new Map(data.slots.flatMap(s => s.teachers).map(t => [t.short_code, t])).values()])
       }
@@ -44,7 +46,7 @@ export default function ViewRoutinePage() {
 
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters)
-    const filteredSlots = slots.filter(slot => {
+    const filteredSlots = originalSlots.filter(slot => {
       if (newFilters.batch !== 'All' && slot.batch.name !== newFilters.batch) {
         return false
       }

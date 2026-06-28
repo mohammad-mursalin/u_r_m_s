@@ -13,6 +13,7 @@ import TeacherSchedulePage from './pages/TeacherSchedulePage'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/admin/DashboardPage'
 import RoutineBuilderPage from './pages/admin/RoutineBuilderPage'
+import ViewRoutinePage from './pages/admin/ViewRoutinePage'
 import TeachersPage from './pages/admin/TeachersPage'
 import CoursesPage from './pages/admin/CoursesPage'
 import RoomsPage from './pages/admin/RoomsPage'
@@ -49,6 +50,7 @@ function App() {
         >
           <Route path="/admin/dashboard" element={<DashboardPage />} />
           <Route path="/admin/routine-builder" element={<RoutineBuilderPage />} />
+          <Route path="/admin/view-routine" element={<ViewRoutinePage />} />
           <Route path="/admin/teachers" element={<TeachersPage />} />
           <Route path="/admin/courses" element={<CoursesPage />} />
           <Route path="/admin/rooms" element={<RoomsPage />} />

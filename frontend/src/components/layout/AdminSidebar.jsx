@@ -1,5 +1,17 @@
-import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { X } from 'lucide-react'
+import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom'
+import { useState } from 'react'
+import { X, Eye, LayoutGrid, Users, BookOpen, MapPin, UserCheck, Calendar, CalendarDays } from 'lucide-react'
+
+const iconMap = {
+  '/admin/dashboard': CalendarDays,
+  '/admin/routine-builder': LayoutGrid,
+  '/admin/view-routine': Eye,
+  '/admin/teachers': Users,
+  '/admin/courses': BookOpen,
+  '/admin/rooms': MapPin,
+  '/admin/batches': UserCheck,
+  '/admin/semesters': Calendar,
+}
 
 export default function AdminSidebar() {
   const navigate = useNavigate()
@@ -9,6 +21,7 @@ export default function AdminSidebar() {
   const menuItems = [
     { path: '/admin/dashboard', label: 'Dashboard' },
     { path: '/admin/routine-builder', label: 'Routine Builder' },
+    { path: '/admin/view-routine', label: 'View Routine' },
     { path: '/admin/teachers', label: 'Teachers' },
     { path: '/admin/courses', label: 'Courses' },
     { path: '/admin/rooms', label: 'Rooms' },
@@ -31,11 +44,12 @@ export default function AdminSidebar() {
         <nav className="mt-4 px-3">
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path
+            const Icon = iconMap[item.path]
             return (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`block px-6 py-3 transition ${
+                className={`flex items-center gap-3 px-6 py-3 transition ${
                   isActive ? 'bg-gray-700 text-white' : 'hover:bg-gray-700'
                 }`}
                 onClick={() => {
@@ -43,6 +57,7 @@ export default function AdminSidebar() {
                   navigate(item.path)
                 }}
               >
+                {Icon && <Icon size={18} />}
                 {item.label}
               </Link>
             )

@@ -32,6 +32,7 @@ export default function SlotModal({
   semesterId,
   onSaved,
   onDeleted,
+  suggestedWeekType = null,
 }) {
   const { showSuccess, showWarning, showError } = useToastStore();
   const [loading, setLoading] = useState(false);
@@ -64,12 +65,12 @@ export default function SlotModal({
           course: "",
           room: "",
           teacher_ids: [],
-          week_type: "all",
+          week_type: suggestedWeekType || "all",
           duration: 1,
         });
       }
     }
-  }, [isOpen, existingSlot, day, timeSlot]);
+  }, [isOpen, existingSlot, day, timeSlot, suggestedWeekType]);
   const fetchOptions = async () => {
     try {
       const [coursesData, roomsData, teachersData] = await Promise.all([

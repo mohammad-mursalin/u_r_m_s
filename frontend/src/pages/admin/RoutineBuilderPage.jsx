@@ -159,10 +159,10 @@ export default function RoutineBuilderPage() {
     setCheckingAllConflicts(false);
   };
 
-  const handleCellClick = (day, timeSlot, batch, slot) => {
-    setModalData({ day, timeSlot, batch, slot });
-    setModalOpen(true);
-  };
+  const handleCellClick = (day, timeSlot, batch, clickedSlot, suggestedWeekType = null) => {
+    setModalData({ day, timeSlot, batch, slot: clickedSlot, suggestedWeekType })
+    setModalOpen(true)
+  }
 
   const handleSlotSaved = () => {
     fetchSlots();
@@ -279,6 +279,7 @@ export default function RoutineBuilderPage() {
             batch={modalData.batch}
             existingSlot={modalData.slot}
             semesterId={selectedSemester.id}
+            suggestedWeekType={modalData.suggestedWeekType}
           />
         )}
       </div>

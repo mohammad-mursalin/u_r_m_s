@@ -1,4 +1,5 @@
 /**
+
  * The main timetable grid component
  * Props: slots (array), isEditable (bool), onCellClick (func), conflicts (object keyed by slot id)
  */
@@ -84,34 +85,27 @@ export default function RoutineGrid({ slots, isEditable = false, onCellClick, co
                             return null
                           }
 
-                          const matchedSlot = filteredSlots.find(slot =>
+                          // Find ALL matching slots for this cell (ODD + EVEN)
+                          const matchedSlots = filteredSlots.filter(slot =>
                             slot.day === day &&
                             slot.time_slot.id === ts.id &&
                             slot.batch.name === batchName
                           )
 
-                          const slotId = matchedSlot?.id
+                          const slotIds = matchedSlots.map(s => s.id)
+                          const hasConflict = slotIds.some(id => conflicts[id]?.length > 0)
 
                           return (
                             <td
                               key={tsIndex}
                               className="border-r border-gray-200 border-b border-gray-200 p-1 min-w-[100px]"
                             >
-                              {matchedSlot ? (
-                                <RoutineCell
-                                  slot={matchedSlot}
-                                  isEditable={isEditable}
-                                  onClick={() => onCellClick(day, ts, { id: batchId, name: batchName }, matchedSlot)}
-                                  hasConflict={conflicts[slotId]?.length > 0}
-                                />
-                              ) : (
-                                <RoutineCell
-                                  slot={null}
-                                  isEditable={isEditable}
-                                  onClick={() => onCellClick(day, ts, { id: batchId, name: batchName }, null)}
-                                  hasConflict={false}
-                                />
-                              )}
+                              <RoutineCell
+                                slots={matchedSlots}
+                                isEditable={isEditable}
+                                onClick={({ slot, suggestedWeekType }) => onCellClick(day, ts, { id: batchId, name: batchName }, slot, suggestedWeekType)}
+                                hasConflict={hasConflict}
+                              />
                             </td>
                           )
                         })}

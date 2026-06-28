@@ -443,8 +443,7 @@ export default function SlotModal({
                               />
                               <span className="text-sm font-medium text-red-700">
                                 {conflicts.length} conflict
-                                {conflicts.length > 1 ? "s" : ""} — fix before
-                                saving
+                                {conflicts.length > 1 ? "s" : ""} — fix before saving
                               </span>
                               <div className="mt-2 space-y-1">
                                 {conflicts.map((conflict, index) => (

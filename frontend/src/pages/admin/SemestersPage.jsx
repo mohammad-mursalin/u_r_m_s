@@ -3,12 +3,12 @@
  */
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Edit, ExternalLink, CheckCircle, AlertCircle, Trash2, Clock, Plus } from 'lucide-react'
+import { Edit, ExternalLink, CheckCircle, AlertCircle, Trash2, Clock, Plus, LayoutGrid } from 'lucide-react'
 import AddEditModal from '../../components/ui/AddEditModal'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import EmptyState from '../../components/ui/EmptyState'
 import useToastStore from '../../store/toastStore'
-import { getSemesters, createSemester, updateSemester, activateSemester, publishSemester, unpublishSemester, cloneSemester } from '../../api/routine'
+import { getSemesters, createSemester, updateSemester, activateSemester, publishSemester, unpublishSemester, cloneSemester, deleteSemester } from '../../api/routine'
 
 export default function SemestersPage() {
   const navigate = useNavigate()
@@ -138,6 +138,36 @@ export default function SemestersPage() {
     navigate(`/admin/routine-builder?semester=${semester.id}`)
   }
 
+  const handleDelete = async (semester) => {
+    if (semester.is_active && semester.is_published) {
+      const confirm1 = window.confirm(
+        `⚠️ WARNING: "${semester.name}" is currently ACTIVE and PUBLISHED.\n` +
+        `Students and teachers can see this routine right now.\n\n` +
+        `Are you absolutely sure you want to delete it?`
+      )
+      if (!confirm1) return
+    } else if (semester.slots_count > 0) {
+      const confirm2 = window.confirm(
+        `"${semester.name}" contains slots. Deleting it will remove all slots too.\n\n` +
+        `Are you sure you want to delete this semester?`
+      )
+      if (!confirm2) return
+    } else {
+      const confirm3 = window.confirm(
+        `Delete "${semester.name}"? This cannot be undone.`
+      )
+      if (!confirm3) return
+    }
+
+    try {
+      await deleteSemester(semester.id)
+      showSuccess(`Semester "${semester.name}" deleted`)
+      fetchSemesters()
+    } catch (err) {
+      showError('Failed to delete semester. Please try again.')
+    }
+  }
+
   const handleSave = async (data) => {
     setModalLoading(true)
     try {
@@ -239,47 +269,60 @@ export default function SemestersPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(semester)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        onClick={() => handleEdit(semester)}
-                        className="text-blue-600 hover:text-blue-900 mr-3"
-                      >
-                        <Edit size={16} />
-                      </button>
-                      {semester.is_active ? (
-                        <button
-                          onClick={() => handlePublish(semester.id)}
-                          className="text-green-600 hover:text-green-900 mr-3"
-                        >
-                          <CheckCircle size={16} />
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleActivate(semester.id)}
-                          className="text-yellow-600 hover:text-yellow-900 mr-3"
-                        >
-                          <Clock size={16} />
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handleUnpublish(semester.id)}
-                        className="text-gray-600 hover:text-gray-900 mr-3"
-                      >
-                        <AlertCircle size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleClone(semester)}
-                        className="text-purple-600 hover:text-purple-900 mr-3"
-                      >
-                        <ExternalLink size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleOpenBuilder(semester)}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        <Edit size={16} />
-                      </button>
-                    </td>
+<td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                       <button
+                         onClick={() => handleEdit(semester)}
+                         title="Edit Semester"
+                         className="text-blue-600 hover:text-blue-900 mr-3"
+                       >
+                         <Edit size={16} />
+                       </button>
+                       <button
+                         onClick={() => handleOpenBuilder(semester)}
+                         title="Open in Routine Builder"
+                         className="text-blue-600 hover:text-blue-900 mr-3"
+                       >
+                         <LayoutGrid size={16} />
+                       </button>
+                       {semester.is_active ? (
+                         <button
+                           onClick={() => handlePublish(semester.id)}
+                           title="Publish Routine"
+                           className="text-green-600 hover:text-green-900 mr-3"
+                         >
+                           <CheckCircle size={16} />
+                         </button>
+                       ) : (
+                         <button
+                           onClick={() => handleActivate(semester.id)}
+                           title="Set as Active Semester"
+                           className="text-yellow-600 hover:text-yellow-900 mr-3"
+                         >
+                           <Clock size={16} />
+                         </button>
+                       )}
+                       <button
+                         onClick={() => handleUnpublish(semester.id)}
+                         title="Unpublish Routine"
+                         className="text-gray-600 hover:text-gray-900 mr-3"
+                       >
+                         <AlertCircle size={16} />
+                       </button>
+                       <button
+                         onClick={() => handleClone(semester)}
+                         title="Clone Semester"
+                         className="text-purple-600 hover:text-purple-900 mr-3"
+                       >
+                         <ExternalLink size={16} />
+                       </button>
+                       <button
+                         onClick={() => handleDelete(semester)}
+                         title="Delete Semester"
+                         className="text-red-600 hover:text-red-900"
+                       >
+                         <Trash2 size={16} />
+                       </button>
+                     </td>
                   </tr>
                 ))}
               </tbody>

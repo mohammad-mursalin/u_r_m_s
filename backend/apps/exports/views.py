@@ -10,16 +10,23 @@ from apps.routine.models import Semester, RoutineSlot, TimeSlot, Batch, Course, 
 from apps.routine.serializers import RoutineSlotSerializer
 
 
-BATCH_COLORS = {
-    'MSc': '#f3e8ff',
-    '13B': '#dbeafe',
-    '14B': '#dcfce7',
-    '15B': '#fef9c3',
-    '16B': '#ffedd5',
-    '17B': '#fee2e2',
-}
+# Light colors palette (8 colors, cyclic assignment by index)
+BATCH_COLORS = [
+    '#f3e8ff',  # Very light purple
+    '#dbeafe',  # Very light blue
+    '#dcfce7',  # Very light green
+    '#fef9c3',  # Very light yellow
+    '#ffedd5',  # Very light orange
+    '#fee2e2',  # Very light red
+    '#e0e7ff',  # Light indigo
+    '#f3f4f6',  # Light gray
+]
 
-DAYS_ORDER = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+def get_batch_color(batch_index):
+    """Get color for batch based on its index in the batches."""
+    return BATCH_COLORS[batch_index % len(BATCH_COLORS)]
+
+DAYS_ORDER = ['saturday','sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday']
 
 
 @require_http_methods(["GET"])
@@ -48,9 +55,13 @@ def export_pdf(request):
     slots = slots.distinct().prefetch_related('teachers__teacher')
 
     # Get all time slots in correct order (matching frontend)
+    # Frontend TIME_SLOTS: slots 1-4=morning, slot 5=break, slots 6-8=afternoon
     time_slots = TimeSlot.objects.order_by('slot_number')
+    morning_slots = [ts for ts in time_slots if ts.slot_number in [1, 2, 3, 4]]
+    lunch_break_slot = [ts for ts in time_slots if ts.slot_number == 5]
+    afternoon_slots = [ts for ts in time_slots if ts.slot_number in [6, 7, 8]]
     batches = sorted(set(slots.values_list('batch__name', flat=True)))
-    
+
     # Get unique teachers from slots
     teacher_codes = set()
     for slot in slots:
@@ -86,6 +97,7 @@ def export_pdf(request):
                 padding: 4px;
                 text-align: center;
                 font-size: 10px;
+                vertical-align: top;
             }}
             .day-header {{
                 background: #374151;
@@ -131,101 +143,114 @@ def export_pdf(request):
     '''
 
     if slots:
-        html += '''
-        <table>
-            <thead>
-                <tr>
-                    <th style="width: 100px;">Day | Batch</th>
-        '''
-        
-        # Header columns in correct order: morning (1-4), break (0), afternoon (5-7)
-        morning_slots = [ts for ts in time_slots if ts.slot_number in [1, 2, 3, 4]]
-        break_slot = [ts for ts in time_slots if ts.slot_number == 0]
-        afternoon_slots = [ts for ts in time_slots if ts.slot_number in [5, 6, 7]]
-        
+        html += '<table>'
+        html += '<thead>'
+        html += '<tr>'
+        html += '<th style="width: 100px;">Day | Batch</th>'
         for ts in morning_slots:
             html += f'<th style="width: 100px;">{ts.label or f"{ts.start_time}–{ts.end_time}"}</th>'
-        for ts in break_slot:
-            html += '<th style="width: 100px;">Prayer &amp; Lunch Break</th>'
+        html += '<th class="break-cell" style="width: 100px;">Prayer &amp; Lunch Break</th>'
         for ts in afternoon_slots:
             html += f'<th style="width: 100px;">{ts.label or f"{ts.start_time}–{ts.end_time}"}</th>'
-        
-        html += '''
-                </tr>
-            </thead>
-            <tbody>
-        '''
-        
+        html += '</tr>'
+        html += '</thead>'
+        html += '<tbody>'
+
         for day in DAYS_ORDER:
             day_slots = [s for s in slots if s.day_of_week == day]
             if day_slots:
-                html += f'<tr><td class="day-header" colspan="{len(time_slots) + 1}">{day.capitalize()}</td></tr>'
-                
-                for batch_name in batches:
+                html += f'<tr><td class="day-header" colspan="{len(morning_slots) + 1 + len(afternoon_slots) + 1}">{day.capitalize()}</td></tr>'
+
+                for batch_index, batch_name in enumerate(batches):
                     batch_slots = [s for s in day_slots if s.batch.name == batch_name]
-                    if batch_slots:
-                        batch_color = BATCH_COLORS.get(batch_name, '#ffffff')
-                        html += f'<tr><td class="batch-label" style="background:{batch_color}">{batch_name}</td>'
-                        
-                        # Columns in correct order: 1,2,3,4 (morning), 0 (break), 5,6,7 (afternoon)
-                        # slot_number 0 = break, 1-4 = morning, 5-7 = afternoon
-                        morning_slots = [ts for ts in time_slots if ts.slot_number in [1, 2, 3, 4]]
-                        break_slot = [ts for ts in time_slots if ts.slot_number == 0]
-                        afternoon_slots = [ts for ts in time_slots if ts.slot_number in [5, 6, 7]]
-                        
-                        # Morning slots
-                        for ts in morning_slots:
-                            slot = next((s for s in batch_slots if s.time_slot.id == ts.id), None)
-                            if slot:
-                                teacher_codes = ', '.join([t.teacher.short_code for t in slot.teachers.all()])
+                    batch_color = get_batch_color(batch_index)
+
+                    html += '<tr>'
+
+                    # Batch label cell
+                    html += f'<td class="batch-label" style="background:{batch_color}; width: 100px;">{batch_name}</td>'
+
+                    # Morning slots
+                    for ts in morning_slots:
+                        matching_slots = [s for s in batch_slots if s.time_slot.id == ts.id]
+
+                        if matching_slots:
+                            html += f'<td style="background:{batch_color}; padding: 2px; vertical-align: top; width: 100px;">'
+
+                            for i, slot in enumerate(matching_slots):
+                                teacher_codes_list = ', '.join([t.teacher.short_code for t in slot.teachers.all()])
+
+                                # Week type badge
                                 week_badge = ''
                                 if slot.week_type == 'odd':
-                                    week_badge = '<span class="week-badge odd-badge">[ODD]</span>'
+                                    week_badge = '<span style="font-size:8px; background:#fef9c3; color:#92400e; padding:1px 3px; border-radius:2px;">ODD</span>'
                                 elif slot.week_type == 'even':
-                                    week_badge = '<span class="week-badge even-badge">[EVEN]</span>'
-                                html += f'<td>{slot.course.code}<br/><span style="font-size: 9px;">{teacher_codes}</span>{week_badge}<br/><span style="font-size: 9px; color: #6b7280;">R{slot.room.room_number}</span></td>'
-                            else:
-                                html += '<td></td>'
-                        
-                        # Break slot
-                        if break_slot:
-                            ts = break_slot[0]
-                            html += '<td class="break-cell">Prayer &amp; Lunch Break</td>'
-                        
-                        # Afternoon slots
-                        for ts in afternoon_slots:
-                            slot = next((s for s in batch_slots if s.time_slot.id == ts.id), None)
-                            if slot:
-                                teacher_codes = ', '.join([t.teacher.short_code for t in slot.teachers.all()])
+                                    week_badge = '<span style="font-size:8px; background:#dbeafe; color:#1e40af; padding:1px 3px; border-radius:2px;">EVEN</span>'
+
+                                # Divider between stacked slots
+                                divider = '<hr style="margin:2px 0; border:none; border-top:1px dashed #ccc;">' if i > 0 else ''
+
+                                html += f'''
+                                {divider}
+                                <div style="font-size:10px; font-weight:bold; margin: 2px 0;">{slot.course.code}</div>
+                                <div style="font-size:9px; color:#555; margin: 2px 0;">{teacher_codes_list}</div>
+                                <div style="font-size:9px; color:#888; margin: 2px 0;">R{slot.room.room_number}</div>
+                                {week_badge}
+                                '''
+
+                            html += '</td>'
+                        else:
+                            html += f'<td style="background:{batch_color}; width: 100px;"></td>'
+
+                    # Lunch break cell — rowspan across all batch rows (ONLY FOR FIRST BATCH!)
+                    if batch_index == 0:
+                        html += f'<td class="break-cell" rowspan="{len(batches)}" style="vertical-align:middle; font-style:italic; color:#9ca3af; width: 100px;">Prayer &amp; Lunch Break</td>'
+
+                    # Afternoon slots
+                    for ts in afternoon_slots:
+                        matching_slots = [s for s in batch_slots if s.time_slot.id == ts.id]
+
+                        if matching_slots:
+                            html += f'<td style="background:{batch_color}; padding: 2px; vertical-align: top; width: 100px;">'
+
+                            for i, slot in enumerate(matching_slots):
+                                teacher_codes_list = ', '.join([t.teacher.short_code for t in slot.teachers.all()])
+
+                                # Week type badge
                                 week_badge = ''
                                 if slot.week_type == 'odd':
-                                    week_badge = '<span class="week-badge odd-badge">[ODD]</span>'
+                                    week_badge = '<span style="font-size:8px; background:#fef9c3; color:#92400e; padding:1px 3px; border-radius:2px;">ODD</span>'
                                 elif slot.week_type == 'even':
-                                    week_badge = '<span class="week-badge even-badge">[EVEN]</span>'
-                                html += f'<td>{slot.course.code}<br/><span style="font-size: 9px;">{teacher_codes}</span>{week_badge}<br/><span style="font-size: 9px; color: #6b7280;">R{slot.room.room_number}</span></td>'
-                            else:
-                                html += '<td></td>'
-                        
-                        html += '</tr>'
-        
-        html += '''
-            </tbody>
-        </table>
-        '''
+                                    week_badge = '<span style="font-size:8px; background:#dbeafe; color:#1e40af; padding:1px 3px; border-radius:2px;">EVEN</span>'
+
+                                # Divider between stacked slots
+                                divider = '<hr style="margin:2px 0; border:none; border-top:1px dashed #ccc;">' if i > 0 else ''
+
+                                html += f'''
+                                {divider}
+                                <div style="font-size:10px; font-weight:bold; margin: 2px 0;">{slot.course.code}</div>
+                                <div style="font-size:9px; color:#555; margin: 2px 0;">{teacher_codes_list}</div>
+                                <div style="font-size:9px; color:#888; margin: 2px 0;">R{slot.room.room_number}</div>
+                                {week_badge}
+                                '''
+
+                            html += '</td>'
+                        else:
+                            html += f'<td style="background:{batch_color}; width: 100px;"></td>'
+
+                    html += '</tr>'
+
+        html += '</tbody>'
+        html += '</table>'
 
     if teachers:
-        html += '''
-        <div class="teacher-legend" style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #ddd;">
-            <h3 style="font-size: 12px; font-weight: 600; margin-bottom: 10px;">Teacher Legend</h3>
-            <div style="display: flex; flex-wrap: wrap; gap: 10px; font-size: 11px;">
-        '''
+        html += '<div class="teacher-legend" style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #ddd;">'
+        html += '<h3 style="font-size: 12px; font-weight: 600; margin-bottom: 10px;">Teacher Legend</h3>'
+        html += '<div style="display: flex; flex-wrap: wrap; gap: 10px; font-size: 11px;">'
         for t in teachers:
             html += f'<span style="margin-right: 15px;"><strong>{t["short_code"]}</strong> — {t["full_name"]}</span>'
-        
-        html += '''
-            </div>
-        </div>
-        '''
+        html += '</div>'
+        html += '</div>'
 
     html += '''
     </body>

@@ -8,21 +8,26 @@ const useAuthStore = create((set) => ({
   isLoading: true,
   isLoggingIn: false,
 
-  login: async (username, password) => {
-    set({ isLoggingIn: true })
-    try {
-      const data = await loginUser(username, password)
-      set({
-        isLoggedIn: true,
-        user: data.user,
-        isLoggingIn: false
-      })
-      return { success: true }
-    } catch (error) {
-      set({ isLoggingIn: false })
-      return { success: false, error: error.response?.data?.message || 'Login failed' }
-    }
-  },
+login: async (email, password) => {
+     set({ isLoggingIn: true })
+     try {
+       const data = await loginUser(email, password)
+       set({
+         isLoggedIn: true,
+         user: data.user,
+         isLoggingIn: false
+       })
+       return { success: true }
+     } catch (error) {
+       set({ isLoggingIn: false })
+       const responseData = error.response?.data
+       return {
+         success: false,
+         error: responseData?.message || 'Login failed',
+         fields: responseData?.fields || {}
+       }
+     }
+   },
 
   logout: async () => {
     try {

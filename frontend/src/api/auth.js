@@ -5,14 +5,14 @@ export const getCsrfToken = async () => {
    return response.data.csrfToken
  }
 
-export const loginUser = async (username, password) => {
-  await getCsrfToken()
-  const response = await axiosInstance.post('/api/v1/auth/login/', {
-    username,
-    password
-  })
-  return response.data
-}
+export const loginUser = async (email, password) => {
+   await getCsrfToken()
+   const response = await axiosInstance.post('/api/v1/auth/login/', {
+     email,
+     password
+   })
+   return response.data
+ }
 
 export const logoutUser = async () => {
   const response = await axiosInstance.post('/api/v1/auth/logout/')

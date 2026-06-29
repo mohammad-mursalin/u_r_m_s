@@ -3,10 +3,10 @@
  */
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { CalendarDays } from 'lucide-react'
 import { getTeacherSchedule } from '../api/routine'
 import RoutineGrid from '../components/routine/RoutineGrid'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
-import ErrorMessage from '../components/ui/ErrorMessage'
 
 export default function TeacherSchedulePage() {
   const { code } = useParams()
@@ -28,10 +28,10 @@ export default function TeacherSchedulePage() {
       if (data.slots && data.slots.length > 0) {
         setSlots(data.slots)
       } else {
-        setError(`No routine found for teacher ${code}.`)
+        setError(`No schedule found for ${code}.`)
       }
     } catch (err) {
-      setError(`Could not load schedule for ${code}. Please try again.`)
+      setError(`Could not connect to the server. Please check your connection.`)
       console.error(err)
     } finally {
       setLoading(false)
@@ -48,20 +48,15 @@ export default function TeacherSchedulePage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <ErrorMessage
-          message={error}
-          onRetry={() => fetchSchedule()}
-        />
-      </div>
-    )
-  }
-
-  if (slots.length === 0) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-md text-center">
-          <p className="text-gray-600">No schedule found for this teacher.</p>
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-8 text-center max-w-md">
+          <CalendarDays size={48} className="text-blue-300 mx-auto mb-4" />
+          <h3 className="text-xl font-medium text-gray-700 mb-2">
+            No Schedule Published
+          </h3>
+          <p className="text-gray-500 text-sm">
+            {error}
+          </p>
           <button
             onClick={() => navigate('/')}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
@@ -103,13 +98,7 @@ export default function TeacherSchedulePage() {
           </div>
         </div>
 
-        {slots.length > 0 ? (
-          <RoutineGrid slots={slots} isEditable={false} onCellClick={handleCellClick} />
-        ) : (
-          <div className="bg-white rounded-lg shadow-md p-8 text-center">
-            <p className="text-gray-500">No schedule found for this teacher.</p>
-          </div>
-        )}
+        <RoutineGrid slots={slots} isEditable={false} onCellClick={handleCellClick} />
       </div>
     </div>
   )

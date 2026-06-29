@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Download } from 'lucide-react'
+import { Download, AlertCircle, CalendarDays, Search } from 'lucide-react'
 import { getActiveRoutine } from '../../api/routine'
 import RoutineGrid from '../../components/routine/RoutineGrid'
 import RoutineFilterPanel from '../../components/filters/RoutineFilterPanel'
@@ -12,6 +12,7 @@ export default function ViewRoutinePage() {
   const [slots, setSlots] = useState([])
   const [originalSlots, setOriginalSlots] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [semesterInfo, setSemesterInfo] = useState(null)
   const [batches, setBatches] = useState([])
   const [teachers, setTeachers] = useState([])
@@ -25,6 +26,7 @@ export default function ViewRoutinePage() {
   const fetchRoutine = async () => {
     try {
       setLoading(true)
+      setError(null)
       const data = await getActiveRoutine()
 
       if (data.semester) {
@@ -38,7 +40,21 @@ export default function ViewRoutinePage() {
         setTeachers([...new Map(data.slots.flatMap(s => s.teachers).map(t => [t.short_code, t])).values()])
       }
     } catch (err) {
-      showError('Could not load routine. Please try again.')
+      const status = err.response?.status
+      const message = err.response?.data?.message || err.message
+
+      if (status === 403) {
+        setError('Access denied (403). Please login and try again.')
+      } else if (status === 404) {
+        setError('Resource not found (404).')
+      } else if (status === 500) {
+        setError('Server error (500). Please try again later.')
+      } else if (status === 400) {
+        setError('Invalid request (400). Please check your input.')
+      } else {
+        setError(`Error (${status}): ${message}`)
+      }
+      console.error(err)
     } finally {
       setLoading(false)
     }
@@ -69,17 +85,45 @@ export default function ViewRoutinePage() {
     return <LoadingSpinner message="Loading routine..." />
   }
 
-  if (slots.length === 0 && semesterInfo) {
+  if (error) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
-        <div className="bg-white p-8 rounded-lg shadow-md text-center max-w-md">
-          <p className="text-gray-600 mb-4">No routine is currently published.</p>
-          <p className="text-gray-500 mb-6">Go to Semesters to publish one.</p>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center max-w-md">
+          <AlertCircle size={40} className="text-red-400 mx-auto mb-3" />
+          <h3 className="text-lg font-medium text-red-800 mb-1">
+            Failed to load routine
+          </h3>
+          <p className="text-red-600 text-sm mb-4">
+            Could not connect to the server. Please check your connection.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (slots.length === 0 && originalSlots.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-8 text-center max-w-md">
+          <CalendarDays size={48} className="text-blue-300 mx-auto mb-4" />
+          <h3 className="text-xl font-medium text-gray-700 mb-2">
+            No Routine Published Yet
+          </h3>
+          <p className="text-gray-500 text-sm">
+            The class routine for this semester has not been published yet.
+            Please check back later.
+          </p>
           <button
             onClick={() => navigate('/admin/semesters')}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
           >
-            Go to Semesters
+            Go to Semesters to Publish
           </button>
         </div>
       </div>
@@ -134,7 +178,21 @@ export default function ViewRoutinePage() {
               batches={batches}
             />
           ) : (
-            <p className="text-center text-gray-500">No slots found for selected filters.</p>
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
+              <Search size={40} className="text-gray-300 mx-auto mb-3" />
+              <h3 className="text-lg font-medium text-gray-600 mb-1">
+                No classes found
+              </h3>
+              <p className="text-gray-400 text-sm mb-4">
+                No slots match your current filters.
+              </p>
+              <button
+                onClick={() => handleFilterChange({ batch: 'All', teacher: 'All', day: 'All' })}
+                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 text-sm"
+              >
+                Clear Filters
+              </button>
+            </div>
           )}
         </div>
 

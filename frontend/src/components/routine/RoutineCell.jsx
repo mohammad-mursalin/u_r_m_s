@@ -70,7 +70,11 @@ export default function RoutineCell({ slots = [], isEditable, onClick, hasConfli
         <div
           onClick={(e) => { 
             e.stopPropagation()
-            onClick({ slot: null, suggestedWeekType: slots[0].week_type === 'odd' ? 'even' : 'odd' })
+            onClick({ 
+              slot: null, 
+              suggestedWeekType: slots[0].week_type === 'odd' ? 'even' : 'odd',
+              prefillSlot: slots[0]
+            })
           }}
           className="flex-1 border border-dashed border-gray-300 rounded flex items-center justify-center text-gray-300 hover:text-gray-500 hover:border-gray-400 cursor-pointer text-xs"
         >

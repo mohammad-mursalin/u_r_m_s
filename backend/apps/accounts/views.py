@@ -2,12 +2,19 @@
 Views for authentication endpoints.
 """
 
-import json
+import re
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import get_user_model
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods, require_safe
-from django.contrib.auth.decorators import login_required
 from django.middleware.csrf import get_token
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+
+
+User = get_user_model()
 
 
 @require_safe
@@ -23,88 +30,92 @@ def csrf_view(request):
     })
 
 
-@require_http_methods(["POST"])
+@api_view(['POST'])
+@permission_classes([AllowAny])
 def login_view(request):
-    """
-    Login endpoint.
+    email = request.data.get('email', '').strip().lower()
+    password = request.data.get('password', '')
 
-    Request body: { "username": "...", "password": "..." }
+    errors = {}
+    if not email:
+        errors['email'] = 'Email is required.'
+    elif not re.match(r'^[^@]+@[^@]+\.[^@]+$', email):
+        errors['email'] = 'Enter a valid email address.'
+    if not password:
+        errors['password'] = 'Password is required.'
+    elif len(password) < 6:
+        errors['password'] = 'Password must be at least 6 characters.'
 
-    Success 200: { "user": { "id": 1, "username": "...", "is_staff": true } }
-    Failure 401: { "error": true, "message": "Invalid credentials" }
-    """
+    if errors:
+        return Response({
+            'error': True,
+            'message': 'Validation failed',
+            'fields': errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+
     try:
-        data = json.loads(request.body) if request.body else {}
-    except json.JSONDecodeError:
-        return JsonResponse(
-            {"error": True, "message": "Invalid JSON body"},
-            status=400
-        )
-    
-    username = data.get('username')
-    password = data.get('password')
+        user_obj = User.objects.get(email__iexact=email)
+    except User.DoesNotExist:
+        return Response({
+            'error': True,
+            'message': 'No account found with this email address.'
+        }, status=status.HTTP_401_UNAUTHORIZED)
+    except User.MultipleObjectsReturned:
+        return Response({
+            'error': True,
+            'message': 'Multiple accounts found. Contact administrator.'
+        }, status=status.HTTP_400_BAD_REQUEST)
 
-    if not username or not password:
-        return JsonResponse(
-            {"error": True, "message": "Username and password are required"},
-            status=400
-        )
+    authenticated_user = authenticate(
+        request,
+        username=user_obj.username,
+        password=password
+    )
 
-    user = authenticate(request, username=username, password=password)
+    if authenticated_user is None:
+        return Response({
+            'error': True,
+            'message': 'Incorrect password.'
+        }, status=status.HTTP_401_UNAUTHORIZED)
 
-    if user is None:
-        return JsonResponse(
-            {"error": True, "message": "Invalid credentials"},
-            status=401
-        )
+    if not authenticated_user.is_active:
+        return Response({
+            'error': True,
+            'message': 'This account has been disabled. Contact administrator.'
+        }, status=status.HTTP_403_FORBIDDEN)
 
-    login(request, user)
+    if not authenticated_user.is_staff:
+        return Response({
+            'error': True,
+            'message': 'You do not have admin access.'
+        }, status=status.HTTP_403_FORBIDDEN)
 
-    return JsonResponse({
-        "user": {
-            "id": user.id,
-            "username": user.username,
-            "is_staff": user.is_staff,
-            "is_superuser": user.is_superuser,
-            "is_active": user.is_active
+    login(request, authenticated_user)
+    return Response({
+        'user': {
+            'id': authenticated_user.id,
+            'email': authenticated_user.email,
+            'username': authenticated_user.username,
+            'is_staff': authenticated_user.is_staff,
         }
-    })
+    }, status=status.HTTP_200_OK)
 
 
-@require_http_methods(["POST"])
+@api_view(['POST'])
 def logout_view(request):
-    """
-    Logout endpoint.
-
-    Success 200: { "message": "Logged out successfully" }
-    """
     logout(request)
-
-    return JsonResponse({
-        "message": "Logged out successfully"
-    })
+    return Response({'message': 'Logged out successfully'})
 
 
-@require_safe
+@api_view(['GET'])
 def me_view(request):
-    """
-    Get current logged-in user info.
-
-    Success 200: { "user": { "id": 1, "username": "...", "is_staff": true } }
-    Failure 401: { "error": true, "message": "Not authenticated" }
-    """
     if not request.user.is_authenticated:
-        return JsonResponse(
-            {"error": True, "message": "Not authenticated"},
-            status=401
-        )
-    
-    return JsonResponse({
-        "user": {
-            "id": request.user.id,
-            "username": request.user.username,
-            "is_staff": request.user.is_staff,
-            "is_superuser": request.user.is_superuser,
-            "is_active": request.user.is_active
+        return Response({'error': True, 'message': 'Not authenticated'}, status=401)
+    return Response({
+        'user': {
+            'id': request.user.id,
+            'email': request.user.email,
+            'username': request.user.username,
+            'is_staff': request.user.is_staff,
         }
     })

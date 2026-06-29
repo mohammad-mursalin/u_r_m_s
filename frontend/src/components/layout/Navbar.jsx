@@ -26,7 +26,7 @@ export default function Navbar() {
 
       {isLoggedIn ? (
         <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-600">
+          <span className="text-sm font-bold text-gray-600">
             {user?.username || 'Admin'}
           </span>
           <button
@@ -37,7 +37,7 @@ export default function Navbar() {
           </button>
         </div>
       ) : (
-        <Link to="/login" className="text-sm text-blue-600 hover:text-blue-800">
+        <Link to="/login" className="text-sm font-bold text-blue-600 hover:text-blue-800">
           Admin Login
         </Link>
       )}

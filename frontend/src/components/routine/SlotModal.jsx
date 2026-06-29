@@ -22,6 +22,15 @@ import {
 import { formatDay, formatTime } from "../../utils/formatters";
 import { TIME_SLOTS } from "../../utils/constants";
 import useToastStore from "../../store/toastStore";
+
+// Get consecutive non-break time slots starting from timeSlot
+const getConsecutiveSlots = (startSlot, duration) => {
+  const nonBreakSlots = TIME_SLOTS.filter((ts) => !ts.isBreak);
+  const startIndex = nonBreakSlots.findIndex((ts) => ts.id === startSlot.id);
+  if (startIndex === -1) return [startSlot];
+  return nonBreakSlots.slice(startIndex, startIndex + duration);
+};
+
 export default function SlotModal({
   isOpen,
   onClose,
@@ -33,6 +42,7 @@ export default function SlotModal({
   onSaved,
   onDeleted,
   suggestedWeekType = null,
+  prefillSlot = null,
 }) {
   const { showSuccess, showWarning, showError } = useToastStore();
   const [loading, setLoading] = useState(false);
@@ -51,26 +61,35 @@ export default function SlotModal({
   const [checkingConflicts, setCheckingConflicts] = useState(false);
   useEffect(() => {
     if (isOpen) {
-      fetchOptions();
-      if (existingSlot) {
-        setFormData({
-          course: existingSlot.course.id,
-          room: existingSlot.room.id,
-          teacher_ids: existingSlot.teachers.map((t) => t.id),
-          week_type: existingSlot.week_type,
-          duration: existingSlot.slot_duration,
-        });
-      } else {
-        setFormData({
-          course: "",
-          room: "",
-          teacher_ids: [],
-          week_type: suggestedWeekType || "all",
-          duration: 1,
-        });
-      }
+      fetchOptions().then(() => {
+        if (existingSlot) {
+          setFormData({
+            course: existingSlot.course.id,
+            room: existingSlot.room.id,
+            teacher_ids: existingSlot.teachers.map((t) => t.id),
+            week_type: existingSlot.week_type,
+            duration: existingSlot.slot_duration,
+          });
+        } else if (prefillSlot) {
+          setFormData({
+            course: prefillSlot.course.id,
+            room: prefillSlot.room.id,
+            teacher_ids: prefillSlot.teachers.map((t) => t.id),
+            week_type: suggestedWeekType || 'all',
+            duration: prefillSlot.slot_duration,
+          });
+        } else {
+          setFormData({
+            course: "",
+            room: "",
+            teacher_ids: [],
+            week_type: suggestedWeekType || "all",
+            duration: 1,
+          });
+        }
+      });
     }
-  }, [isOpen, existingSlot, day, timeSlot, suggestedWeekType]);
+  }, [isOpen, existingSlot, day, timeSlot, suggestedWeekType, prefillSlot]);
   const fetchOptions = async () => {
     try {
       const [coursesData, roomsData, teachersData] = await Promise.all([
@@ -95,53 +114,47 @@ export default function SlotModal({
       return;
     }
     setCheckingConflicts(true);
-    const payload = {
-      batch: batch.id,
-      teacher_ids: formData.teacher_ids,
-      room: parseInt(formData.room),
-      time_slot: timeSlot.id,
-      day_of_week: day,
-      week_type: formData.week_type,
-    };
-    if (existingSlot) {
-      payload.exclude_slot_id = existingSlot.id;
+    
+    // Get consecutive slots for multi-slot creation
+    const duration = parseInt(formData.duration) || 1;
+    const consecutiveSlots = getConsecutiveSlots(timeSlot, duration);
+    
+    const conflictList = [];
+    
+    // Check conflicts for each consecutive slot
+    for (const ts of consecutiveSlots) {
+      const payload = {
+        batch: batch.id,
+        teacher_ids: formData.teacher_ids,
+        room: parseInt(formData.room),
+        time_slot: ts.id,
+        day_of_week: day,
+        week_type: formData.week_type,
+      };
+      // Exclude existing slot OR the prefill slot (when creating opposite week variant)
+      if (existingSlot) {
+        payload.exclude_slot_id = existingSlot.id;
+      } else if (prefillSlot) {
+        payload.exclude_slot_id = prefillSlot.id;
+      }
+      try {
+        const result = await checkConflicts(semesterId, payload);
+        if (result.conflicts?.teachers?.length) {
+          result.conflicts.teachers.forEach((c) => conflictList.push(c.message));
+        }
+        if (result.conflicts?.rooms?.length) {
+          result.conflicts.rooms.forEach((c) => conflictList.push(c.message));
+        }
+        if (result.conflicts?.batches?.length) {
+          result.conflicts.batches.forEach((c) => conflictList.push(c.message));
+        }
+      } catch (err) {
+        console.error("Failed to check conflicts:", err);
+      }
     }
-    console.log("Conflict check payload:", {
-      batch_id: batch.id,
-      batch_id_type: typeof batch.id,
-      teacher_ids: formData.teacher_ids,
-      teacher_ids_types: formData.teacher_ids.map((id) => typeof id),
-      room: payload.room,
-      room_type: typeof payload.room,
-      time_slot: timeSlot.id,
-      time_slot_type: typeof timeSlot.id,
-      day_of_week: day,
-      week_type: formData.week_type,
-      semesterId: semesterId,
-      semesterId_type: typeof semesterId,
-      exclude_slot_id: existingSlot ? existingSlot.id : "none",
-    });
-    try {
-      const result = await checkConflicts(semesterId, payload);
-      console.log("Conflict check response:", result);
-      // Transform conflict object into flat array of conflict messages
-      const conflictList = [];
-      if (result.conflicts?.teachers?.length) {
-        result.conflicts.teachers.forEach((c) => conflictList.push(c.message));
-      }
-      if (result.conflicts?.rooms?.length) {
-        result.conflicts.rooms.forEach((c) => conflictList.push(c.message));
-      }
-      if (result.conflicts?.batches?.length) {
-        result.conflicts.batches.forEach((c) => conflictList.push(c.message));
-      }
-      setConflicts(conflictList);
-    } catch (err) {
-      console.error("Failed to check conflicts:", err);
-      setConflicts([]);
-    } finally {
-      setCheckingConflicts(false);
-    }
+    
+    setConflicts([...new Set(conflictList)]); // Remove duplicates
+    setCheckingConflicts(false);
   };
   useEffect(() => {
     if (formData.course && formData.room && formData.teacher_ids.length > 0) {
@@ -154,6 +167,8 @@ export default function SlotModal({
     formData.room,
     formData.teacher_ids,
     formData.week_type,
+    formData.duration,
+    timeSlot,
     semesterId,
   ]);
   const handleSubmit = async (e) => {
@@ -182,22 +197,54 @@ export default function SlotModal({
       return;
     }
     try {
-      const slotData = {
-        batch: batch.id,
-        course: formData.course ? parseInt(formData.course) : null,
-        room: formData.room ? parseInt(formData.room) : null,
-        time_slot: timeSlot.id,
-        day_of_week: day,
-        week_type: formData.week_type,
-        slot_duration: formData.duration ? parseInt(formData.duration) : 1,
-        teacher_ids: formData.teacher_ids,
-      };
       if (existingSlot) {
+        // Editing - keep as single slot only
+        const slotData = {
+          batch: batch.id,
+          course: formData.course ? parseInt(formData.course) : null,
+          room: formData.room ? parseInt(formData.room) : null,
+          time_slot: timeSlot.id,
+          day_of_week: day,
+          week_type: formData.week_type,
+          slot_duration: formData.duration ? parseInt(formData.duration) : 1,
+          teacher_ids: formData.teacher_ids,
+        };
         await updateSlot(semesterId, existingSlot.id, slotData);
         showSuccess("Slot updated successfully");
       } else {
-        await createSlot(semesterId, slotData);
-        showSuccess("Slot added successfully");
+        // Creating new slot(s) - handle multi-slot logic
+        const duration = parseInt(formData.duration) || 1;
+        const consecutiveSlots = getConsecutiveSlots(timeSlot, duration);
+
+        if (consecutiveSlots.length < duration) {
+          setErrors({
+            general: `Not enough time slots available. Only ${consecutiveSlots.length} slot(s) remaining in the day from this time.`,
+          });
+          setLoading(false);
+          return;
+        }
+
+        const createdSlots = [];
+        for (const ts of consecutiveSlots) {
+          const slotData = {
+            batch: batch.id,
+            course: parseInt(formData.course),
+            room: parseInt(formData.room),
+            time_slot: ts.id,
+            day_of_week: day,
+            week_type: formData.week_type,
+            slot_duration: 1,
+            teacher_ids: formData.teacher_ids,
+          };
+          const result = await createSlot(semesterId, slotData);
+          createdSlots.push(result);
+        }
+
+        const msg =
+          duration > 1
+            ? `${duration} consecutive slots added (${consecutiveSlots[0].label} to ${consecutiveSlots[consecutiveSlots.length - 1].label})`
+            : "Slot added successfully";
+        showSuccess(msg);
       }
       onSaved();
       onClose();
@@ -399,7 +446,7 @@ export default function SlotModal({
                                 </span>
                               </label>
                             ))}
-                          </div>
+</div>
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -408,17 +455,22 @@ export default function SlotModal({
                           <select
                             value={formData.duration}
                             onChange={(e) =>
-                              setFormData({
+setFormData({
                                 ...formData,
                                 duration: e.target.value,
                               })
                             }
                             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                           >
-                            <option value="1">1 slot (theory)</option>
-                            <option value="2">2 slots (lab)</option>
-                            <option value="3">3 slots (lab)</option>
+                            <option value="1">1 hour</option>
+                            <option value="2">2 hours (consecutive)</option>
+                            <option value="3">3 hours (consecutive)</option>
                           </select>
+                          {existingSlot && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              * To change duration, delete this slot and create a new one
+                            </p>
+                          )}
                         </div>
                         {errors.general && (
                           <div className="bg-red-50 border border-red-500 text-red-700 px-4 py-2 rounded">
